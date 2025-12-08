@@ -1,0 +1,93 @@
+package com.springboot.service;
+
+import java.util.Map;
+
+public interface CamService {
+    /**
+     * 触发拍照指令
+     * @param clientId ESP 的 clientId
+     * @return 命令序号
+     */
+    String triggerCapture(String clientId);
+
+    /**
+     * 控制LED开关
+     * @param clientId ESP 的 clientId
+     * @param value 0=关闭, 1=开启
+     * @return 命令序号
+     */
+    String controlLed(String clientId, int value);
+
+    /**
+     * 设置LED亮度
+     * @param clientId ESP 的 clientId
+     * @param value 亮度值(0-255)
+     * @return 命令序号
+     */
+    String setLedBrightness(String clientId, int value);
+
+    /**
+     * 设置摄像头参数
+     * @param clientId ESP 的 clientId
+     * @param param 参数名称(brightness, contrast, saturation等)
+     * @param value 参数值
+     * @return 命令序号
+     */
+    String setCameraParam(String clientId, String param, int value);
+
+    /**
+     * 获取设备状态
+     * @param clientId ESP 的 clientId
+     * @return 设备状态信息
+     */
+    Map<String, Object> getDeviceStatus(String clientId);
+
+    /**
+     * 设置视频流分辨率
+     * @param clientId ESP 的 clientId
+     * @param framesize 分辨率代码 (7=480p, 11=720p, 14=1080p)
+     * @return 命令序号
+     */
+    String setStreamResolution(String clientId, int framesize);
+
+    /**
+     * 设置WiFi配置
+     * @param clientId ESP 的 clientId
+     * @param ssid WiFi名称
+     * @param password WiFi密码
+     * @return 命令序号
+     */
+    String setWiFiConfig(String clientId, String ssid, String password);
+
+    /**
+     * 设置MQTT配置
+     * @param clientId ESP 的 clientId
+     * @param server MQTT服务器地址
+     * @param port MQTT端口
+     * @param mqttClientId MQTT客户端ID
+     * @return 命令序号
+     */
+    String setMQTTConfig(String clientId, String server, int port, String mqttClientId);
+
+    /**
+     * 设置上传URL
+     * @param clientId ESP 的 clientId
+     * @param url 上传地址
+     * @return 命令序号
+     */
+    String setUploadUrl(String clientId, String url);
+
+    /**
+     * 重置为默认配置
+     * @param clientId ESP 的 clientId
+     * @return 命令序号
+     */
+    String resetConfig(String clientId);
+
+    /**
+     * 查询设备配置
+     * @param clientId ESP 的 clientId
+     * @return 命令序号
+     */
+    String getConfig(String clientId);
+}

@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32-CAM 控制面板</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .section h2 {
+            color: #667eea;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fff;
+            border-radius: 6px;
+            border: 2px solid #e0e0e0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .response h3 {
+            color: #333;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .response pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .video-preview {
+            margin-top: 15px;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .video-preview img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.6s linear infinite;
+            margin-left: 8px;
+        }
+
+        .status-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #e0e0e0;
+        }
+
+        .status-label {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        .status-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎥 ESP32-CAM 控制面板</h1>
+        <p class="subtitle">快速测试所有功能</p>
+
+        <!-- 基础配置 -->
+        <div class="section">
+            <h2>⚙️ 基础配置</h2>
+            <div class="input-group">
+                <label>后端地址</label>
+                <input type="text" id="baseUrl" value="http://192.168.124.68:8080"
+                    placeholder="http://192.168.124.68:8080">
+            </div>
+            <div class="input-group">
+                <label>设备ID (Client ID)</label>
+                <input type="text" id="clientId" value="esp32cam" placeholder="esp32cam">
+            </div>
+        </div>
+
+        <!-- 视频流显示 -->
+        <div class="section">
+            <h2>📺 实时视频流</h2>
+            <div class="input-group">
+                <label>ESP32-CAM IP地址</label>
+                <input type="text" id="esp32Ip" placeholder="192.168.124.100" value="">
+            </div>
+            <button class="btn-primary" onclick="startStream()" style="width: 100%; margin-bottom: 15px;">▶️
+                启动视频流</button>
+            <div id="streamContainer"
+                style="display: none; background: #000; border-radius: 8px; overflow: hidden; position: relative;">
+                <img id="videoStream" style="width: 100%; height: auto; display: block;" alt="视频流加载中...">
+                <div style="position: absolute; top: 10px; right: 10px;">
+                    <button class="btn-danger" onclick="stopStream()" style="padding: 8px 15px; font-size: 12px;">⏹️
+                        停止</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 摄像头控制 -->
+        <div class="section">
+            <h2>📷 摄像头控制</h2>
+            <div class="btn-group">
+                <button class="btn-primary" onclick="capture()">📸 拍照 (1080p)</button>
+                <button class="btn-info" onclick="getStatus()">📊 查询状态</button>
+                <button class="btn-success" onclick="setResolution(7)">480p 视频流</button>
+                <button class="btn-success" onclick="setResolution(11)">720p 视频流</button>
+                <button class="btn-warning" onclick="setResolution(14)">1080p 视频流</button>
+            </div>
+        </div>
+
+        <!-- LED控制 -->
+        <div class="section">
+            <h2>💡 LED 控制</h2>
+            <div class="input-group">
+                <label>LED亮度 (0-255)</label>
+                <input type="range" id="brightness" min="0" max="255" value="128"
+                    oninput="document.getElementById('brightnessValue').textContent=this.value">
+                <span id="brightnessValue" style="font-weight: bold; color: #667eea;">128</span>
+            </div>
+            <div class="btn-group">
+                <button class="btn-success" onclick="ledControl(1)">💡 LED 开</button>
+                <button class="btn-danger" onclick="ledControl(0)">🌑 LED 关</button>
+                <button class="btn-info" onclick="setBrightness()">🔆 设置亮度</button>
+            </div>
+        </div>
+
+        <!-- 配置管理 -->
+        <div class="section">
+            <h2>🔧 配置管理</h2>
+
+            <div class="input-group">
+                <label>WiFi SSID</label>
+                <input type="text" id="wifiSsid" placeholder="新WiFi名称">
+            </div>
+            <div class="input-group">
+                <label>WiFi 密码</label>
+                <input type="password" id="wifiPass" placeholder="WiFi密码">
+            </div>
+            <button class="btn-warning" onclick="setWiFi()" style="width: 100%; margin-bottom: 15px;">⚠️ 设置WiFi
+                (设备将重启)</button>
+
+            <div class="input-group">
+                <label>MQTT 服务器</label>
+                <input type="text" id="mqttServer" placeholder="broker.emqx.io">
+            </div>
+            <div class="input-group">
+                <label>MQTT 端口</label>
+                <input type="number" id="mqttPort" value="1883">
+            </div>
+            <button class="btn-warning" onclick="setMQTT()" style="width: 100%; margin-bottom: 15px;">⚠️ 设置MQTT
+                (设备将重启)</button>
+
+            <div class="input-group">
+                <label>上传URL</label>
+                <input type="text" id="uploadUrl" placeholder="http://192.168.124.68:8080/mqtt/cam/upload">
+            </div>
+            <button class="btn-info" onclick="setUploadUrl()" style="width: 100%; margin-bottom: 15px;">💾
+                设置上传URL</button>
+
+            <div class="btn-group">
+                <button class="btn-info" onclick="getConfig()">📋 查询配置</button>
+                <button class="btn-danger" onclick="resetConfig()">🔄 恢复默认</button>
+            </div>
+        </div>
+
+
+        <!-- 摄像头参数 -->
+        <div class="section">
+            <h2>🎨 摄像头参数调整</h2>
+
+            <div style="margin-bottom: 15px;">
+                <strong>亮度 (Brightness)</strong>
+                <div class="btn-group" style="grid-template-columns: repeat(3, 1fr);">
+                    <button class="btn-info" onclick="quickParam('brightness', -2)">🌑 最暗</button>
+                    <button class="btn-info" onclick="quickParam('brightness', 0)">⚪ 默认</button>
+                    <button class="btn-info" onclick="quickParam('brightness', 2)">☀️ 最亮</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <strong>对比度 (Contrast)</strong>
+                <div class="btn-group" style="grid-template-columns: repeat(3, 1fr);">
+                    <button class="btn-info" onclick="quickParam('contrast', -2)">📉 低</button>
+                    <button class="btn-info" onclick="quickParam('contrast', 0)">⚪ 默认</button>
+                    <button class="btn-info" onclick="quickParam('contrast', 2)">📈 高</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <strong>饱和度 (Saturation)</strong>
+                <div class="btn-group" style="grid-template-columns: repeat(3, 1fr);">
+                    <button class="btn-info" onclick="quickParam('saturation', -2)">🎨 淡</button>
+                    <button class="btn-info" onclick="quickParam('saturation', 0)">⚪ 默认</button>
+                    <button class="btn-info" onclick="quickParam('saturation', 2)">🌈 鲜艳</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <strong>特效 (Special Effect)</strong>
+                <div class="btn-group">
+                    <button class="btn-primary" onclick="quickParam('special_effect', 0)">无特效</button>
+                    <button class="btn-primary" onclick="quickParam('special_effect', 1)">负片</button>
+                    <button class="btn-primary" onclick="quickParam('special_effect', 2)">黑白</button>
+                    <button class="btn-primary" onclick="quickParam('special_effect', 3)">复古</button>
+                </div>
+            </div>
+
+            <div>
+                <strong>JPEG质量</strong>
+                <div class="btn-group" style="grid-template-columns: repeat(3, 1fr);">
+                    <button class="btn-success" onclick="quickParam('quality', 10)">🏆 高质量</button>
+                    <button class="btn-success" onclick="quickParam('quality', 20)">⚪ 标准</button>
+                    <button class="btn-success" onclick="quickParam('quality', 40)">⚡ 快速</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 设备状态卡片 -->
+        <div class="section" id="statusCard" style="display: none;">
+            <h2>📊 设备状态</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div class="status-item">
+                    <div class="status-label">🟢 在线状态</div>
+                    <div class="status-value" id="statusOnline">-</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">⏱️ 运行时间</div>
+                    <div class="status-value" id="statusUptime">-</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">💾 空闲内存</div>
+                    <div class="status-value" id="statusMemory">-</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">📡 WiFi信号</div>
+                    <div class="status-value" id="statusSignal">-</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">💡 LED状态</div>
+                    <div class="status-value" id="statusLed">-</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">🔆 LED亮度</div>
+                    <div class="status-value" id="statusBrightness">-</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">📹 分辨率</div>
+                    <div class="status-value" id="statusFramesize">-</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">🔄 最后更新</div>
+                    <div class="status-value" id="statusLastUpdate">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📜 操作日志</h2>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <button class="btn-info" onclick="loadLogs()">🔄 刷新日志</button>
+                <label style="display: flex; align-items: center; gap: 5px;">
+                    <input type="checkbox" id="autoRefresh">
+                    <span>自动刷新(5秒)</span>
+                </label>
+            </div>
+            <div id="logContainer" style="background: white; border-radius: 8px; max-height: 400px; overflow-y: auto;">
+                <!-- 日志将在这里显示 -->
+            </div>
+        </div>
+
+        <!-- 响应结果 -->
+        <div class="response">
+            <h3>📡 API 响应</h3>
+            <pre id="responseText">等待操作...</pre>
+        </div>
+    </div>
+
+    <script>
+        const getBaseUrl = () => document.getElementById('baseUrl').value;
+        const getClientId = () => document.getElementById('clientId').value;
+
+        const framesizeMap = {
+            7: '480p (HVGA)',
+            9: 'SVGA',
+            10: 'XGA',
+            11: '720p (HD)',
+            12: 'SXGA',
+            13: 'UXGA',
+            14: '1080p (FHD)'
+        };
+
+        function showResponse(data, isError = false) {
+            const elem = document.getElementById('responseText');
+            const timestamp = new Date().toLocaleTimeString();
+            elem.textContent = `[${timestamp}] ${isError ? '❌ 错误' : '✅ 成功'}\n${JSON.stringify(data, null, 2)}`;
+            elem.style.color = isError ? '#d32f2f' : '#2e7d32';
+
+            // 如果是设备状态，更新状态卡片
+            if (!isError && data.data && data.data.found) {
+                updateStatusCard(data.data);
+            }
+        }
+
+        function updateStatusCard(status) {
+            document.getElementById('statusCard').style.display = 'block';
+
+            // 在线状态
+            const online = status.online ? '🟢 在线' : '🔴 离线';
+            document.getElementById('statusOnline').textContent = online;
+            document.getElementById('statusOnline').style.color = status.online ? '#4caf50' : '#f44336';
+
+            // 运行时间
+            const uptime = parseInt(status.uptime);
+            const hours = Math.floor(uptime / 3600);
+            const minutes = Math.floor((uptime % 3600) / 60);
+            const seconds = uptime % 60;
+            document.getElementById('statusUptime').textContent = `${hours}时${minutes}分${seconds}秒`;
+
+            // 空闲内存
+            const memory = (status.freeHeap / 1024).toFixed(1);
+            document.getElementById('statusMemory').textContent = `${memory} KB`;
+
+            // WiFi信号强度
+            const rssi = status.rssi;
+            let signalText = '';
+            let signalColor = '';
+            if (rssi > -50) {
+                signalText = `${rssi} dBm 📶 优秀`;
+                signalColor = '#4caf50';
+            } else if (rssi > -70) {
+                signalText = `${rssi} dBm 📶 良好`;
+                signalColor = '#8bc34a';
+            } else if (rssi > -80) {
+                signalText = `${rssi} dBm 📶 一般`;
+                signalColor = '#ff9800';
+            } else {
+                signalText = `${rssi} dBm 📶 较弱`;
+                signalColor = '#f44336';
+            }
+            document.getElementById('statusSignal').textContent = signalText;
+            document.getElementById('statusSignal').style.color = signalColor;
+
+            // LED状态
+            document.getElementById('statusLed').textContent = status.ledStatus ? '💡 开启' : '🌑 关闭';
+            document.getElementById('statusLed').style.color = status.ledStatus ? '#ffc107' : '#757575';
+
+            // LED亮度
+            document.getElementById('statusBrightness').textContent = status.ledBrightness;
+
+            // 分辨率
+            const framesizeText = framesizeMap[status.framesize] || `未知 (${status.framesize})`;
+            document.getElementById('statusFramesize').textContent = framesizeText;
+
+            // 最后更新时间
+            const lastUpdate = new Date(parseInt(status.lastUpdateTime));
+            const now = new Date();
+            const diffSeconds = Math.floor((now - lastUpdate) / 1000);
+            document.getElementById('statusLastUpdate').textContent = `${diffSeconds}秒前`;
+        }
+
+        function showLoading(button) {
+            const original = button.innerHTML;
+            button.innerHTML += '<span class="loading"></span>';
+            button.disabled = true;
+            return () => {
+                button.innerHTML = original;
+                button.disabled = false;
+            };
+        }
+
+        async function apiCall(url, method = 'POST', body = null) {
+            try {
+                const options = { method };
+                if (body) {
+                    options.headers = { 'Content-Type': 'application/json' };
+                    options.body = JSON.stringify(body);
+                }
+                const response = await fetch(url, options);
+                const data = await response.json();
+                showResponse(data, data.code !== 0);
+                return data;
+            } catch (error) {
+                showResponse({ error: error.message }, true);
+            }
+        }
+
+        // 摄像头控制
+        async function capture() {
+            const btn = event.target;
+            const done = showLoading(btn);
+            await apiCall(`${getBaseUrl()}/mqtt/capture/${getClientId()}`);
+            done();
+        }
+
+        async function getStatus() {
+            await apiCall(`${getBaseUrl()}/mqtt/status/${getClientId()}`, 'GET');
+        }
+
+        async function setResolution(framesize) {
+            const btn = event.target;
+            const done = showLoading(btn);
+            await apiCall(`${getBaseUrl()}/mqtt/stream-resolution/${getClientId()}`, 'POST', { framesize });
+            done();
+
+            // 提示用户刷新视频流
+            const container = document.getElementById('streamContainer');
+            if (container.style.display !== 'none') {
+                alert('✅ 分辨率已设置，视频流将自动应用新分辨率');
+            }
+        }
+
+        // LED控制
+        async function ledControl(value) {
+            const btn = event.target;
+            const done = showLoading(btn);
+            await apiCall(`${getBaseUrl()}/mqtt/led/${getClientId()}`, 'POST', { value });
+            done();
+        }
+
+        async function setBrightness() {
+            const value = document.getElementById('brightness').value;
+            const btn = event.target;
+            const done = showLoading(btn);
+            await apiCall(`${getBaseUrl()}/mqtt/led-brightness/${getClientId()}`, 'POST', { brightness: parseInt(value) });
+            done();
+        }
+
+        // 配置管理
+        async function setWiFi() {
+            const ssid = document.getElementById('wifiSsid').value;
+            const password = document.getElementById('wifiPass').value;
+            if (!ssid || !password) {
+                alert('❌ 请输入WiFi名称和密码');
+                return;
+            }
+            if (!confirm('⚠️ 设置WiFi后设备将重启，确认继续？')) return;
+
+            const btn = event.target;
+            const done = showLoading(btn);
+            await apiCall(`${getBaseUrl()}/mqtt/config/wifi/${getClientId()}`, 'POST', { ssid, password });
+            done();
+        }
+
+        async function setMQTT() {
+            const server = document.getElementById('mqttServer').value;
+            const port = parseInt(document.getElementById('mqttPort').value);
+            if (!server) {
+                alert('❌ 请输入MQTT服务器地址');
+                return;
+            }
+            if (!confirm('⚠️ 设置MQTT后设备将重启，确认继续？')) return;
+
+            const btn = event.target;
+            const done = showLoading(btn);
+            await apiCall(`${getBaseUrl()}/mqtt/config/mqtt/${getClientId()}`, 'POST', { server, port });
+            done();
+        }
+
+        async function setUploadUrl() {
+            const url = document.getElementById('uploadUrl').value;
+            if (!url) {
+                alert('❌ 请输入上传URL');
+                return;
+            }
+            const btn = event.target;
+            const done = showLoading(btn);
+            await apiCall(`${getBaseUrl()}/mqtt/config/upload-url/${getClientId()}`, 'POST', { url });
+            done();
+        }
+
+        async function getConfig() {
+            await apiCall(`${getBaseUrl()}/mqtt/config/${getClientId()}`, 'GET');
+        }
+
+        async function resetConfig() {
+            if (!confirm('⚠️ 确认恢复默认配置？设备将重启！')) return;
+            const btn = event.target;
+            const done = showLoading(btn);
+            await apiCall(`${getBaseUrl()}/mqtt/config/reset/${getClientId()}`, 'POST');
+            done();
+        }
+
+        // 快捷参数设置
+        async function quickParam(name, value) {
+            const btn = event.target;
+            const done = showLoading(btn);
+            await apiCall(`${getBaseUrl()}/mqtt/param/${getClientId()}`, 'POST', { name, value });
+            done();
+        }
+
+        // 视频流控制
+        function startStream() {
+            const ip = document.getElementById('esp32Ip').value;
+            if (!ip) {
+                alert('❌ 请输入ESP32-CAM的IP地址');
+                return;
+            }
+
+            const streamUrl = `http://${ip}/stream?t=${Date.now()}`;
+            const img = document.getElementById('videoStream');
+            const container = document.getElementById('streamContainer');
+
+            img.src = streamUrl;
+            container.style.display = 'block';
+
+            // 保存IP到localStorage
+            localStorage.setItem('esp32_ip', ip);
+
+            showResponse({
+                code: 0,
+                msg: '视频流已启动',
+                streamUrl: streamUrl
+            });
+        }
+
+        function stopStream() {
+            const img = document.getElementById('videoStream');
+            const container = document.getElementById('streamContainer');
+
+            img.src = '';
+            container.style.display = 'none';
+
+            showResponse({
+                code: 0,
+                msg: '视频流已停止'
+            });
+        }
+
+        // 页面加载时自动恢复IP
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedIp = localStorage.getItem('esp32_ip');
+            if (savedIp) {
+                document.getElementById('esp32Ip').value = savedIp;
+            }
+        });
+
+        // 定时刷新状态
+        setInterval(() => {
+            const statusCard = document.getElementById('statusCard');
+            if (statusCard.style.display !== 'none') {
+                getStatus();
+            }
+        }, 10000); // 每10秒自动刷新一次
+
+        // 加载日志
+        async function loadLogs() {
+            try {
+                const response = await fetch(`${getBaseUrl()}/mqtt/logs/latest?limit=10`);
+                const result = await response.json();
+
+                if (result.code === 0 && result.data) {
+                    displayLogs(result.data);
+                }
+            } catch (error) {
+                console.error('加载日志失败:', error);
+            }
+        }
+
+        // 显示日志
+        function displayLogs(logs) {
+            const container = document.getElementById('logContainer');
+            if (logs.length === 0) {
+                container.innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">暂无操作日志</p>';
+                return;
+            }
+
+            let html = '<table style="width: 100%; border-collapse: collapse;">';
+            html += `
+        <thead>
+            <tr style="background: #f5f5f5; border-bottom: 2px solid #ddd;">
+                <th style="padding: 10px; text-align: left;">时间</th>
+                <th style="padding: 10px; text-align: left;">设备</th>
+                <th style="padding: 10px; text-align: left;">操作</th>
+                <th style="padding: 10px; text-align: left;">结果</th>
+            </tr>
+        </thead>
+        <tbody>
+    `;
+
+            logs.forEach(log => {
+                const resultColor = log.result === 'success' ? '#4caf50' :
+                    log.result === 'failed' ? '#f44336' : '#ff9800';
+                const resultText = log.result === 'success' ? '✓ 成功' :
+                    log.result === 'failed' ? '✗ 失败' : '⏳ 处理中';
+
+                html += `
+            <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 10px;">${formatTime(log.createTime)}</td>
+                <td style="padding: 10px;">${log.clientId}</td>
+                <td style="padding: 10px;">${log.operationDesc}</td>
+                <td style="padding: 10px; color: ${resultColor}; font-weight: bold;">
+                    ${resultText}${log.resultMsg ? ': ' + log.resultMsg : ''}
+                </td>
+            </tr>
+        `;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // 格式化时间
+        function formatTime(timeStr) {
+            const date = new Date(timeStr);
+            return `${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
+        }
+
+        // 自动刷新
+        setInterval(() => {
+            if (document.getElementById('autoRefresh').checked) {
+                loadLogs();
+            }
+        }, 5000);
+
+        // 页面加载时加载日志
+        window.addEventListener('DOMContentLoaded', loadLogs);
+    </script>
+</body>
+
+</html>
