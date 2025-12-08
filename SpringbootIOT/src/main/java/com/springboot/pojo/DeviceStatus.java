@@ -43,6 +43,11 @@ public class DeviceStatus {
     private int ledBrightness;
     
     /**
+     * 红色指示灯状态
+     */
+    private boolean redLedStatus;
+    
+    /**
      * 当前分辨率
      */
     private int framesize;

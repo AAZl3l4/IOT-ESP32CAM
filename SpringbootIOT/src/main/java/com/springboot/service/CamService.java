@@ -27,6 +27,14 @@ public interface CamService {
     String setLedBrightness(String clientId, int value);
 
     /**
+     * 控制红色指示灯开关
+     * @param clientId ESP 的 clientId
+     * @param value 0=关闭, 1=开启
+     * @return 命令序号
+     */
+    String controlRedLed(String clientId, int value);
+
+    /**
      * 设置摄像头参数
      * @param clientId ESP 的 clientId
      * @param param 参数名称(brightness, contrast, saturation等)
@@ -90,4 +98,12 @@ public interface CamService {
      * @return 命令序号
      */
     String getConfig(String clientId);
+
+    /**
+     * 设置DHT读取间隔
+     * @param clientId ESP 的 clientId
+     * @param interval 间隔(毫秒), 1000-60000
+     * @return 命令序号
+     */
+    String setDhtInterval(String clientId, int interval);
 }

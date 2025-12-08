@@ -24,6 +24,12 @@ public class CamServiceImpl implements CamService {
     
     @Autowired
     private com.springboot.service.OperationLogService operationLogService;
+    
+    @Autowired
+    private com.springboot.service.DhtDataService dhtDataService;
+    
+    @Autowired
+    private com.springboot.service.SseService sseService;
 
     /**
      * 设备状态缓存 - 存储最新的设备状态
@@ -63,6 +69,25 @@ public class CamServiceImpl implements CamService {
                 log.info("设备状态更新: clientId={}, uptime={}s, freeHeap={}, rssi={}", 
                          status.getClientId(), status.getUptime(), 
                          status.getFreeHeap(), status.getRssi());
+            }
+        }
+        // 处理DHT22温湿度数据上报
+        else if (topic.endsWith("/dht")) {
+            try {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> dhtData = JsonUtil.fromJson(json, Map.class);
+                if (dhtData != null) {
+                    String clientId = (String) dhtData.get("clientId");
+                    double temperature = ((Number) dhtData.get("temperature")).doubleValue();
+                    double humidity = ((Number) dhtData.get("humidity")).doubleValue();
+                    
+                    dhtDataService.save(clientId, temperature, humidity);
+                    // SSE实时推送到前端
+                    sseService.pushDhtData(clientId, temperature, humidity);
+                    log.info("温湿度数据: clientId={}, 温度={}℃, 湿度={}%", clientId, temperature, humidity);
+                }
+            } catch (Exception e) {
+                log.error("解析DHT数据失败: {}", e.getMessage());
             }
         }
     }
@@ -122,6 +147,20 @@ public class CamServiceImpl implements CamService {
         log.info("发送LED亮度指令: clientId={}, cmdId={}, brightness={}", clientId, id, value);
         // 记录操作日志
         operationLogService.log(clientId, "led_brightness", id, value);
+        return "cmd queued " + id;
+    }
+
+    /**
+     * 控制红色指示灯开关
+     */
+    @Override
+    public String controlRedLed(String clientId, int value) {
+        long id = generateCmdId();
+        String json = JsonUtil.toJson(Map.of("id", id, "op", "red_led", "val", value));
+        mqttGateway.send("cam/" + clientId + "/cmd", json);
+        log.info("发送红色指示灯指令: clientId={}, cmdId={}, value={}", clientId, id, value);
+        // 记录操作日志
+        operationLogService.log(clientId, "red_led", id, value);
         return "cmd queued " + id;
     }
 
@@ -267,6 +306,24 @@ public class CamServiceImpl implements CamService {
         log.info("发送查询配置指令: clientId={}, cmdId={}", clientId, id);
         // 记录操作日志
         operationLogService.log(clientId, "get_config", id, 0);
+        return "cmd queued " + id;
+    }
+
+    /**
+     * 设置DHT读取间隔
+     */
+    @Override
+    public String setDhtInterval(String clientId, int interval) {
+        // 限制范围 1000-60000 毫秒
+        if (interval < 1000) interval = 1000;
+        if (interval > 60000) interval = 60000;
+        
+        long id = generateCmdId();
+        String json = JsonUtil.toJson(Map.of("id", id, "op", "set_dht_interval", "val", interval));
+        mqttGateway.send("cam/" + clientId + "/cmd", json);
+        log.info("发送DHT间隔设置指令: clientId={}, cmdId={}, interval={}ms", clientId, id, interval);
+        // 记录操作日志
+        operationLogService.log(clientId, "set_dht_interval", id, interval);
         return "cmd queued " + id;
     }
 }

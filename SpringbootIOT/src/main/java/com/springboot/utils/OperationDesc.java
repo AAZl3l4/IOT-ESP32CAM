@@ -11,10 +11,10 @@ public class OperationDesc {
     private static final Map<String, String> OPERATION_MAP = new HashMap<>();
     
     static {
-        // 基础控制
         OPERATION_MAP.put("capture", "拍照上传");
         OPERATION_MAP.put("led", "LED开关控制");
         OPERATION_MAP.put("led_brightness", "LED亮度调节");
+        OPERATION_MAP.put("red_led", "红色指示灯控制");
         
         // 分辨率
         OPERATION_MAP.put("framesize", "分辨率设置");
@@ -34,6 +34,7 @@ public class OperationDesc {
         OPERATION_MAP.put("set_upload_url", "上传URL配置");
         OPERATION_MAP.put("reset_config", "重置配置");
         OPERATION_MAP.put("get_config", "查询配置");
+        OPERATION_MAP.put("set_dht_interval", "DHT读取间隔设置");
     }
     
     /**
@@ -58,6 +59,8 @@ public class OperationDesc {
                 return "拍照上传(1080p)";
             case "led":
                 return value == 1 ? "LED开启" : "LED关闭";
+            case "red_led":
+                return value == 1 ? "指示灯开启" : "指示灯关闭";
             case "led_brightness":
                 return String.format("LED亮度设为%d", value);
             case "framesize":

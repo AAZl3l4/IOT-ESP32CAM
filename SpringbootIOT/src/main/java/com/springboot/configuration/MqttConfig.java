@@ -48,7 +48,7 @@ public class MqttConfig {
     public MessageProducer inbound(MqttPahoClientFactory factory) {
         MqttPahoMessageDrivenChannelAdapter a =
                 new MqttPahoMessageDrivenChannelAdapter("spring-cam-result", factory, 
-                    "cam/+/upload", "cam/+/result", "cam/+/status");  // 添加status订阅
+                    "cam/+/upload", "cam/+/result", "cam/+/status", "cam/+/dht");  // 添加dht订阅
         a.setCompletionTimeout(5000);
         a.setQos(1);
         a.setOutputChannel(mqttInputChannel());

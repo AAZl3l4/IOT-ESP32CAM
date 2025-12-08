@@ -22,6 +22,9 @@ public class OperationLogServiceImpl implements OperationLogService {
     @Autowired
     private OperationLogMapper operationLogMapper;
     
+    @Autowired
+    private com.springboot.service.SseService sseService;
+    
     @Override
     public void log(String clientId, String operation, Long cmdId, Integer value) {
         OperationLog operationLog = new OperationLog();
@@ -34,6 +37,9 @@ public class OperationLogServiceImpl implements OperationLogService {
         
         operationLogMapper.insert(operationLog);
         log.info("记录操作日志: clientId={}, operation={}, cmdId={}", clientId, operation, cmdId);
+        
+        // SSE推送新日志
+        sseService.pushOperationLog(clientId, operation, operationLog.getOperationDesc(), "pending", null);
     }
     
     @Override
@@ -47,6 +53,10 @@ public class OperationLogServiceImpl implements OperationLogService {
             operationLog.setResultMsg(message);
             operationLogMapper.updateById(operationLog);
             log.info("更新操作结果: cmdId={}, result={}, msg={}", cmdId, success ? "成功" : "失败", message);
+            
+            // SSE推送更新后的日志
+            sseService.pushOperationLog(operationLog.getClientId(), operationLog.getOperation(), 
+                    operationLog.getOperationDesc(), operationLog.getResult(), message);
         } else {
             log.warn("【警告】未找到操作日志记录: cmdId={}", cmdId);
         }

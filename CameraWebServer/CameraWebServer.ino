@@ -4,6 +4,7 @@
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 #include <Preferences.h>
+#include <DHT.h>
 
 // ===========================
 // Select camera model in board_config.h
@@ -40,6 +41,7 @@ PubSubClient mqttClient(espClient);
 // ===========================
 // LED控制相关
 // ===========================
+// 闪光灯 (GPIO 4 - 白色超亮)
 #define LED_PIN 4
 #define LED_PWM_CHANNEL 15  // 避免与摄像头冲突
 #define LED_PWM_FREQ 5000
@@ -47,6 +49,20 @@ PubSubClient mqttClient(espClient);
 
 bool ledStatus = false;
 int ledBrightness = 128;
+
+// 红色指示灯 (GPIO 33)
+#define RED_LED_PIN 33
+bool redLedStatus = false;
+
+// ===========================
+// DHT22温湿度传感器
+// ===========================
+#define DHT_PIN 13        // 数据引脚接IO13
+#define DHT_TYPE DHT22    // 传感器类型
+DHT dht(DHT_PIN, DHT_TYPE);
+
+unsigned long lastDhtReadTime = 0;
+unsigned long dhtReadInterval = 5000;  // DHT读取间隔(毫秒)，默认5秒，可远程配置
 
 // ===========================
 // 函数声明
@@ -69,6 +85,8 @@ void publishResult(long cmdId, bool ok, const char* info);
 void publishStatus();
 void controlLED(int value);
 void setLEDBrightness(int value);
+void controlRedLED(int value);  // 红色指示灯控制
+void readAndPublishDHT();       // 读取并发布温湿度数据
 void setCameraParam(const char* param, int value);
 
 // ===========================
@@ -174,8 +192,17 @@ void setup() {
 #if defined(LED_GPIO_NUM)
   ledcAttach(LED_PIN, LED_PWM_FREQ, LED_PWM_RESOLUTION);
   ledcWrite(LED_PIN, 0);  // 初始关闭
-  Serial.println("LED PWM初始化完成");
+  Serial.println("闪光灯PWM初始化完成");
 #endif
+
+  // 初始化红色指示灯 (GPIO 33)
+  pinMode(RED_LED_PIN, OUTPUT);
+  digitalWrite(RED_LED_PIN, HIGH);  // HIGH = 关闭 (低电平有效)
+  Serial.println("红色指示灯初始化完成");
+  
+  // 初始化DHT22传感器
+  dht.begin();
+  Serial.println("DHT22温湿度传感器初始化完成");
 
   // ===========================
   // 连接WiFi
@@ -236,6 +263,12 @@ void loop() {
   if (millis() - lastStatusReport > 30000) {
     publishStatus();
     lastStatusReport = millis();
+  }
+  
+  // 按配置间隔读取DHT22温湿度(默认5秒)
+  if (millis() - lastDhtReadTime >= dhtReadInterval) {
+    readAndPublishDHT();
+    lastDhtReadTime = millis();
   }
 
   delay(10);
@@ -482,6 +515,19 @@ void handleCommand(StaticJsonDocument<512>& doc) {
     publishConfig(cmdId);
     return;
   }
+  
+  else if (strcmp(op, "set_dht_interval") == 0) {
+    // 设置DHT读取间隔
+    int interval = doc["val"] | 5000;
+    if (interval < 1000) interval = 1000;  // 最小1秒
+    if (interval > 60000) interval = 60000;  // 最大60秒
+    dhtReadInterval = interval;
+    char info[48];
+    snprintf(info, sizeof(info), "DHT读取间隔设为%d毫秒", interval);
+    publishResult(cmdId, true, info);
+    Serial.printf("DHT读取间隔已设置为 %d 毫秒\n", interval);
+    return;
+  }
 
   // ===== 摄像头控制指令 =====
   int val = doc["val"] | 0;
@@ -496,6 +542,9 @@ void handleCommand(StaticJsonDocument<512>& doc) {
     char info[32];
     snprintf(info, sizeof(info), "亮度设置为%d", val);
     publishResult(cmdId, true, info);
+  } else if (strcmp(op, "red_led") == 0) {
+    controlRedLED(val);
+    publishResult(cmdId, true, val ? "指示灯开启" : "指示灯关闭");
   } else if (strcmp(op, "framesize") == 0) {
     setCameraParam("framesize", val);
     publishResult(cmdId, true, "分辨率已更新");
@@ -660,6 +709,7 @@ void publishStatus() {
   doc["rssi"] = WiFi.RSSI();
   doc["ledStatus"] = ledStatus;
   doc["ledBrightness"] = ledBrightness;
+  doc["redLedStatus"] = redLedStatus;  // 红色指示灯状态
   
   sensor_t *s = esp_camera_sensor_get();
   doc["framesize"] = s->status.framesize;
@@ -702,6 +752,16 @@ void setLEDBrightness(int value) {
 }
 
 /**
+ * 红色指示灯开关控制 (GPIO 33, 低电平有效)
+ */
+void controlRedLED(int value) {
+  redLedStatus = (value != 0);
+  // 注意: GPIO 33 是低电平点亮，所以逻辑取反
+  digitalWrite(RED_LED_PIN, redLedStatus ? LOW : HIGH);
+  Serial.printf("红色指示灯 %s\n", redLedStatus ? "开启" : "关闭");
+}
+
+/**
  * 设置摄像头参数
  */
 void setCameraParam(const char* param, int value) {
@@ -734,4 +794,34 @@ void setCameraParam(const char* param, int value) {
   }
   
   Serial.printf("摄像头参数 %s 设置为 %d\n", param, value);
+}
+
+/**
+ * 读取DHT22并发布温湿度数据
+ */
+void readAndPublishDHT() {
+  float humidity = dht.readHumidity();
+  float temperature = dht.readTemperature();
+  
+  // 检查读取是否成功
+  if (isnan(humidity) || isnan(temperature)) {
+    Serial.println("DHT22读取失败");
+    return;
+  }
+  
+  // 构建JSON数据
+  StaticJsonDocument<128> doc;
+  doc["clientId"] = mqtt_client_id;
+  doc["temperature"] = temperature;
+  doc["humidity"] = humidity;
+  
+  char buffer[128];
+  serializeJson(doc, buffer);
+  
+  // 发布到 cam/{clientId}/dht topic
+  char topic[64];
+  snprintf(topic, sizeof(topic), "cam/%s/dht", mqtt_client_id.c_str());
+  
+  mqttClient.publish(topic, buffer, 0);
+  Serial.printf("温湿度: %.1f℃, %.1f%%\n", temperature, humidity);
 }

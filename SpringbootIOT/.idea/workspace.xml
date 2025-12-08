@@ -4,45 +4,119 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9a677edb-81bd-40b4-94e9-5c93d9e56396" name="更改" comment="" />
+    <list default="true" id="9a677edb-81bd-40b4-94e9-5c93d9e56396" name="更改" comment="">
+      <change afterPath="$PROJECT_DIR$/sql/dht_data.sql" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/springboot/controller/DhtDataController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/springboot/controller/SseController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/springboot/mapper/DhtDataMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/springboot/pojo/DhtData.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/springboot/pojo/Query/DhtIntervalRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/springboot/pojo/vo/DhtDataVo.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/springboot/pojo/vo/OperationLogVo.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/springboot/service/DhtDataService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/springboot/service/Impl/DhtDataServiceImpl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/springboot/service/Impl/SseServiceImpl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/target/classes/com/springboot/controller/DhtDataController.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/target/classes/com/springboot/mapper/DhtDataMapper.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/target/classes/com/springboot/pojo/DhtData.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/target/classes/com/springboot/service/DhtDataService.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/target/classes/com/springboot/service/Impl/DhtDataServiceImpl.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../libraries/Adafruit_Unified_Sensor/Adafruit_Sensor.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../libraries/Adafruit_Unified_Sensor/Adafruit_Sensor.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../libraries/Adafruit_Unified_Sensor/LICENSE.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../libraries/Adafruit_Unified_Sensor/README.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../libraries/Adafruit_Unified_Sensor/examples/sensortest/sensortest.ino" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../libraries/Adafruit_Unified_Sensor/library.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../libraries/DHT_sensor_library/CONTRIBUTING.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../libraries/DHT_sensor_library/DHT.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../libraries/DHT_sensor_library/DHT.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../libraries/DHT_sensor_library/DHT_U.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../libraries/DHT_sensor_library/DHT_U.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../libraries/DHT_sensor_library/README.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../libraries/DHT_sensor_library/code-of-conduct.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../libraries/DHT_sensor_library/examples/DHT_Unified_Sensor/DHT_Unified_Sensor.ino" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../libraries/DHT_sensor_library/examples/DHTtester/DHTtester.ino" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../libraries/DHT_sensor_library/keywords.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../libraries/DHT_sensor_library/library.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../libraries/DHT_sensor_library/license.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../CameraWebServer/CameraWebServer.ino" beforeDir="false" afterPath="$PROJECT_DIR$/../CameraWebServer/CameraWebServer.ino" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/springboot/configuration/MqttConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/springboot/configuration/MqttConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/springboot/controller/CamController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/springboot/controller/CamController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/springboot/pojo/DeviceStatus.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/springboot/service/CamService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/springboot/service/CamService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/springboot/service/Impl/CamServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/springboot/service/Impl/CamServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/springboot/service/Impl/OperationLogServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/springboot/service/Impl/OperationLogServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/springboot/utils/OperationDesc.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/springboot/utils/OperationDesc.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/application.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/application.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/springboot/configuration/MqttConfig.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/springboot/configuration/MqttConfig.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/springboot/controller/CamController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/springboot/controller/CamController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/springboot/pojo/DeviceStatus.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/springboot/pojo/DeviceStatus.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/springboot/service/CamService.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/springboot/service/CamService.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/springboot/service/Impl/CamServiceImpl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/springboot/service/Impl/CamServiceImpl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/springboot/service/Impl/OperationLogServiceImpl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/springboot/service/Impl/OperationLogServiceImpl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/springboot/utils/OperationDesc.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/springboot/utils/OperationDesc.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../test-panel.html" beforeDir="false" afterPath="$PROJECT_DIR$/../test-panel.html" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "AAZl3l4"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/AAZl3l4/IOT-ESP32CAM.git",
+    "accountId": "628773fd-a2af-42d3-81a5-2603aa10d8d6"
+  }
+}]]></component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 8
 }</component>
   <component name="ProjectId" id="36V3vvGVJ6iTiye1GH9q8bI1sbx" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
-    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
-    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
-    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;Spring Boot.SpringbootApplication.executor&quot;: &quot;Run&quot;,
-    &quot;augment.onboarding.workspace.first.indexed.E:/ACodes/IOT/SpringbootIOT&quot;: &quot;true&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;E:/ACodes/IOT/SpringbootIOT/pom.xml&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;模块&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RequestMappingsPanelOrder0": "0",
+    "RequestMappingsPanelOrder1": "1",
+    "RequestMappingsPanelWidth0": "75",
+    "RequestMappingsPanelWidth1": "75",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "Spring Boot.SpringbootApplication.executor": "Run",
+    "augment.onboarding.workspace.first.indexed.E:/ACodes/IOT/SpringbootIOT": "true",
+    "git-widget-placeholder": "main",
+    "ignore.virus.scanning.warn.message": "true",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "E:/ACodes/IOT/SpringbootIOT/pom.xml",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "模块",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.2",
+    "settings.editor.selected.configurable": "project.propVCSSupport.Confirmation",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RunManager">
     <configuration name="SpringbootApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
       <module name="Springboot" />
@@ -69,10 +143,14 @@
       <updated>1765078145777</updated>
       <workItem from="1765078146941" duration="26491000" />
       <workItem from="1765154321636" duration="49000" />
+      <workItem from="1765201577246" duration="9667000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
   </component>
 </project>

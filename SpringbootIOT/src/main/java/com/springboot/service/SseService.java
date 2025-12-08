@@ -18,6 +18,12 @@ public interface SseService {
     void pushDhtData(String clientId, double temperature, double humidity);
     
     /**
+     * 推送操作日志
+     */
+    void pushOperationLog(String clientId, String operation, String operationDesc, 
+                          String result, String resultMsg);
+    
+    /**
      * 移除连接
      */
     void removeConnection(String clientId);

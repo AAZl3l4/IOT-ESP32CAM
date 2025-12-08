@@ -64,6 +64,17 @@ public class CamController {
     }
 
     /**
+     * 控制红色指示灯开关
+     */
+    @PostMapping("/red-led/{clientId}")
+    public Result<String> redLed(
+            @PathVariable @NotBlank String clientId,
+            @RequestBody @Valid LedRequest request) {
+        String cmdId = camService.controlRedLed(clientId, request.getValue());
+        return Result.success("红色指示灯指令已发送", cmdId);
+    }
+
+    /**
      * 设置摄像头参数
      */
     @PostMapping("/param/{clientId}")
@@ -207,5 +218,16 @@ public class CamController {
         data.put("apis", apis);
         
         return Result.success("ESP32-CAM MQTT IoT API", data);
+    }
+
+    /**
+     * 设置DHT读取间隔
+     */
+    @PostMapping("/dht-interval/{clientId}")
+    public Result<String> setDhtInterval(
+            @PathVariable @NotBlank String clientId,
+            @RequestBody @Valid DhtIntervalRequest request) {
+        String cmdId = camService.setDhtInterval(clientId, request.getInterval());
+        return Result.success("DHT间隔设置指令已发送", cmdId);
     }
 }
