@@ -210,7 +210,8 @@
 
 <body>
     <div class="container">
-        <h1>🎥 ESP32-CAM 控制面板</h1>
+        <h1>🎥 ESP32-CAM 控制面板 <span id="sseStatus" style="font-size: 14px; margin-left: 15px; color: #f44336;">🔴
+                离线</span></h1>
         <p class="subtitle">快速测试所有功能</p>
 
         <!-- 基础配置 -->
@@ -277,7 +278,7 @@
                 <select id="dhtInterval" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ddd;">
                     <option value="1000">1秒</option>
                     <option value="2000">2秒</option>
-                    <option value="5000" selected>5秒(默认)</option>
+                    <option value="5000">5秒</option>
                     <option value="10000">10秒</option>
                     <option value="30000">30秒</option>
                     <option value="60000">60秒</option>
@@ -291,7 +292,6 @@
             <h2>📷 摄像头控制</h2>
             <div class="btn-group">
                 <button class="btn-primary" onclick="capture()">📸 拍照 (1080p)</button>
-                <button class="btn-info" onclick="getStatus()">📊 查询状态</button>
                 <button class="btn-success" onclick="setResolution(7)">480p 视频流</button>
                 <button class="btn-success" onclick="setResolution(11)">720p 视频流</button>
                 <button class="btn-warning" onclick="setResolution(14)">1080p 视频流</button>
@@ -303,18 +303,61 @@
             <h2>💡 LED 控制</h2>
             <div class="input-group">
                 <label>LED亮度 (0-255)</label>
-                <input type="range" id="brightness" min="0" max="255" value="128"
+                <input type="range" id="brightness" min="0" max="255" value="0"
                     oninput="document.getElementById('brightnessValue').textContent=this.value">
-                <span id="brightnessValue" style="font-weight: bold; color: #667eea;">128</span>
+                <span id="brightnessValue" style="font-weight: bold; color: #667eea;">--</span>
             </div>
             <div class="btn-group">
                 <button class="btn-success" onclick="ledControl(1)">💡 LED 开</button>
                 <button class="btn-danger" onclick="ledControl(0)">🌑 LED 关</button>
-                <button class="btn-info" onclick="setBrightness()">🔆 设置亮度</button>
             </div>
             <div class="btn-group" style="margin-top: 10px;">
                 <button class="btn-success" onclick="redLedControl(1)">🔴 指示灯 开</button>
                 <button class="btn-danger" onclick="redLedControl(0)">⚫ 指示灯 关</button>
+            </div>
+        </div>
+
+        <!-- 设备状态 -->
+        <div class="section">
+            <h2>📊 设备状态 <span id="statusLoading" class="loading" style="display: none;"></span></h2>
+            <div id="deviceStatusPanel" style="display: none;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px;">
+                    <div
+                        style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 15px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 12px; opacity: 0.9;">⏱️ 运行时间</div>
+                        <div id="statusUptime" style="font-size: 20px; font-weight: bold; margin: 5px 0;">--</div>
+                    </div>
+                    <div
+                        style="background: linear-gradient(135deg, #11998e, #38ef7d); color: white; padding: 15px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 12px; opacity: 0.9;">💾 空闲内存</div>
+                        <div id="statusFreeHeap" style="font-size: 20px; font-weight: bold; margin: 5px 0;">--</div>
+                    </div>
+                    <div
+                        style="background: linear-gradient(135deg, #f093fb, #f5576c); color: white; padding: 15px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 12px; opacity: 0.9;">📶 WiFi信号</div>
+                        <div id="statusRssi" style="font-size: 20px; font-weight: bold; margin: 5px 0;">--</div>
+                    </div>
+                    <div
+                        style="background: linear-gradient(135deg, #4facfe, #00f2fe); color: white; padding: 15px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 12px; opacity: 0.9;">💡 LED亮度</div>
+                        <div id="statusLedBrightness" style="font-size: 20px; font-weight: bold; margin: 5px 0;">--
+                        </div>
+                    </div>
+                    <div
+                        style="background: linear-gradient(135deg, #fa709a, #fee140); color: white; padding: 15px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 12px; opacity: 0.9;">📷 分辨率</div>
+                        <div id="statusFramesize" style="font-size: 20px; font-weight: bold; margin: 5px 0;">--</div>
+                    </div>
+                    <div
+                        style="background: linear-gradient(135deg, #a8edea, #fed6e3); color: #333; padding: 15px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 12px; opacity: 0.8;">🔌 DHT间隔</div>
+                        <div id="statusDhtInterval" style="font-size: 20px; font-weight: bold; margin: 5px 0;">--</div>
+                    </div>
+                </div>
+            </div>
+            <div id="deviceStatusLoading" style="text-align: center; padding: 30px; color: #888;">
+                <div class="loading" style="width: 30px; height: 30px; margin: 0 auto 10px;"></div>
+                <div>等待设备配置...</div>
             </div>
         </div>
 
@@ -339,7 +382,7 @@
             </div>
             <div class="input-group">
                 <label>MQTT 端口</label>
-                <input type="number" id="mqttPort" value="1883">
+                <input type="number" id="mqttPort" placeholder="1883">
             </div>
             <button class="btn-warning" onclick="setMQTT()" style="width: 100%; margin-bottom: 15px;">⚠️ 设置MQTT
                 (设备将重启)</button>
@@ -968,6 +1011,159 @@
         // SSE连接相关
         let sseConnection = null;
 
+        /**
+           * 应用配置到前端UI
+           */
+        function applyConfig(config) {
+            console.log('========== 收到设备配置 ==========');
+            console.log('完整配置对象:', config);
+
+            // DHT读取间隔
+            if (config.dhtInterval) {
+                const select = document.getElementById('dhtInterval');
+                if (select) {
+                    select.value = config.dhtInterval;
+                    console.log('✅ DHT间隔已设置为:', config.dhtInterval, 'ms');
+                } else {
+                    console.warn('⚠️ dhtInterval元素未找到');
+                }
+            }
+
+            // LED亮度回显
+            if (config.ledBrightness !== undefined) {
+                const slider = document.getElementById('brightness');
+                const valueSpan = document.getElementById('brightnessValue');
+                if (slider) {
+                    slider.value = config.ledBrightness;
+                    if (valueSpan) valueSpan.textContent = config.ledBrightness;
+                    console.log('✅ LED亮度已设置为:', config.ledBrightness);
+                }
+            }
+
+            // WiFi配置回显
+            if (config.wifiSsid) {
+                const input = document.getElementById('wifiSsid');
+                if (input) {
+                    input.value = config.wifiSsid;
+                    console.log('✅ WiFi SSID:', config.wifiSsid);
+                }
+            }
+
+            // MQTT配置回显
+            if (config.mqttBroker) {
+                const input = document.getElementById('mqttServer');
+                if (input) {
+                    input.value = config.mqttBroker;
+                    console.log('✅ MQTT服务器:', config.mqttBroker);
+                }
+            }
+            if (config.mqttPort) {
+                const input = document.getElementById('mqttPort');
+                if (input) {
+                    input.value = config.mqttPort;
+                    console.log('✅ MQTT端口:', config.mqttPort);
+                }
+            }
+
+            // 设备状态信息
+            if (config.rssi !== undefined) {
+                console.log('� WiFi信号强度:', config.rssi, 'dBm');
+            }
+            if (config.uptime !== undefined) {
+                console.log('⏱️ 运行时间:', config.uptime, '秒');
+            }
+            if (config.freeHeap !== undefined) {
+                console.log('💾 空闲内存:', config.freeHeap, 'bytes');
+            }
+            if (config.framesize !== undefined) {
+                console.log('📷 摄像头分辨率:', config.framesize);
+            }
+
+            // 上传URL回显
+            if (config.uploadUrl) {
+                const input = document.getElementById('uploadUrl');
+                if (input) {
+                    input.value = config.uploadUrl;
+                    console.log('✅ 上传URL:', config.uploadUrl);
+                }
+            }
+
+            // === 更新设备状态面板 ===
+            // 隐藏加载动画，显示状态面板
+            const loadingEl = document.getElementById('deviceStatusLoading');
+            const panelEl = document.getElementById('deviceStatusPanel');
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (panelEl) panelEl.style.display = 'block';
+
+            // 运行时间
+            if (config.uptime !== undefined) {
+                const el = document.getElementById('statusUptime');
+                if (el) {
+                    const hours = Math.floor(config.uptime / 3600);
+                    const mins = Math.floor((config.uptime % 3600) / 60);
+                    const secs = config.uptime % 60;
+                    el.textContent = hours > 0 ? `${hours}h ${mins}m` : `${mins}m ${secs}s`;
+                }
+            }
+
+            // 空闲内存
+            if (config.freeHeap !== undefined) {
+                const el = document.getElementById('statusFreeHeap');
+                if (el) el.textContent = (config.freeHeap / 1024).toFixed(1) + 'KB';
+            }
+
+            // WiFi信号
+            if (config.rssi !== undefined) {
+                const el = document.getElementById('statusRssi');
+                if (el) el.textContent = config.rssi + ' dBm';
+            }
+
+            // LED亮度
+            if (config.ledBrightness !== undefined) {
+                const el = document.getElementById('statusLedBrightness');
+                if (el) el.textContent = config.ledBrightness;
+            }
+
+            // 分辨率
+            if (config.framesize !== undefined) {
+                const el = document.getElementById('statusFramesize');
+                const resolutions = { 0: 'QQVGA', 3: 'HQVGA', 5: 'QVGA', 6: 'CIF', 7: 'VGA', 8: 'SVGA', 9: 'XGA', 10: 'SXGA', 11: 'UXGA', 13: 'FHD' };
+                if (el) el.textContent = resolutions[config.framesize] || config.framesize;
+            }
+
+            // DHT间隔
+            if (config.dhtInterval !== undefined) {
+                const el = document.getElementById('statusDhtInterval');
+                if (el) el.textContent = (config.dhtInterval / 1000) + 's';
+            }
+
+            console.log('======================================');
+        }
+
+        // 刷新配置（手动触发）
+        function refreshConfig() {
+            const clientId = getClientId();
+            console.log('手动刷新配置:', clientId);
+
+            // 显示加载状态
+            const loadingEl = document.getElementById('deviceStatusLoading');
+            const panelEl = document.getElementById('deviceStatusPanel');
+            if (loadingEl) loadingEl.style.display = 'block';
+            if (panelEl) panelEl.style.display = 'none';
+
+            // 发送get_config命令
+            fetch(`${getBaseUrl()}/mqtt/cam/${clientId}/get_config`, { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    console.log('刷新配置请求已发送:', data);
+                    showResult('刷新配置', data);
+                })
+                .catch(e => {
+                    console.error('刷新配置失败:', e);
+                    showResult('刷新配置失败', { error: e.message }, true);
+                });
+        }
+
         // 建立SSE连接接收实时温湿度数据
         function connectSSE() {
             const clientId = getClientId();
@@ -984,6 +1180,8 @@
             // 连接成功
             sseConnection.addEventListener('connected', (event) => {
                 console.log('SSE连接成功:', event.data);
+                document.getElementById('sseStatus').innerHTML = '🟢 在线';
+                document.getElementById('sseStatus').style.color = '#4caf50';
             });
 
             // 接收温湿度数据
@@ -1025,9 +1223,22 @@
                 }
             });
 
+            // 接收设备配置
+            sseConnection.addEventListener('config', (event) => {
+                try {
+                    const config = JSON.parse(event.data);
+                    console.log('收到设备配置:', config);
+                    applyConfig(config);
+                } catch (e) {
+                    console.error('解析配置失败:', e);
+                }
+            });
+
             // 连接错误
             sseConnection.onerror = (error) => {
                 console.error('SSE连接错误:', error);
+                document.getElementById('sseStatus').innerHTML = '🔴 离线';
+                document.getElementById('sseStatus').style.color = '#f44336';
                 // 5秒后重连
                 setTimeout(connectSSE, 5000);
             };
@@ -1038,6 +1249,16 @@
             initDhtChart();
             loadDhtData();  // 加载历史数据
             connectSSE();   // 建立SSE实时推送
+
+            // LED亮度滑块：滑动结束自动设置（不需要点击按钮）
+            const brightnessSlider = document.getElementById('brightness');
+            if (brightnessSlider) {
+                brightnessSlider.addEventListener('change', (e) => {
+                    const value = e.target.value;
+                    console.log('LED亮度滑块变更:', value);
+                    setBrightness();  // 调用现有的设置亮度函数
+                });
+            }
         });
 
         // 页面关闭时断开SSE连接

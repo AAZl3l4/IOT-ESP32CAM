@@ -65,6 +65,12 @@ unsigned long lastDhtReadTime = 0;
 unsigned long dhtReadInterval = 5000;  // DHT读取间隔(毫秒)，默认5秒，可远程配置
 
 // ===========================
+// 状态上报
+// ===========================
+unsigned long lastStatusReport = 0;
+unsigned long statusReportInterval = 60000;  // 状态上报间隔(毫秒)，默认60秒，可远程配置
+
+// ===========================
 // 函数声明
 // ===========================
 void startCameraServer();
@@ -74,7 +80,6 @@ void saveWiFiConfig(const String& ssid, const String& pass);
 void saveMQTTConfig(const String& server, int port, const String& clientId);
 void saveUploadUrl(const String& url);
 void resetConfig();
-void publishConfig(long cmdId);
 void setupMQTT();
 void reconnectMQTT();
 void mqttCallback(char* topic, byte* payload, unsigned int length);
@@ -86,7 +91,8 @@ void publishStatus();
 void controlLED(int value);
 void setLEDBrightness(int value);
 void controlRedLED(int value);  // 红色指示灯控制
-void readAndPublishDHT();       // 读取并发布温湿度数据
+void readAndPublishDHT();
+void publishConfig(long cmdId = 0);  // 上报设备配置（完整版，带默认参数）
 void setCameraParam(const char* param, int value);
 
 // ===========================
@@ -258,10 +264,10 @@ void loop() {
   }
   mqttClient.loop();
 
-  // 每30秒上报一次设备状态
-  static unsigned long lastStatusReport = 0;
-  if (millis() - lastStatusReport > 30000) {
+  // 定期上报设备状态（使用可配置间隔，默认60秒）
+  if (millis() - lastStatusReport >= statusReportInterval) {
     publishStatus();
+    publishConfig();  // 同时上报完整配置
     lastStatusReport = millis();
   }
   
@@ -347,29 +353,8 @@ void resetConfig() {
 }
 
 /**
- * 发布当前配置
+ * 发布当前配置（已移至文件末尾，完整版本）
  */
-void publishConfig(long cmdId) {
-  StaticJsonDocument<512> doc;
-  doc["id"] = cmdId;
-  doc["ok"] = true;
-  
-  JsonObject config = doc.createNestedObject("config");
-  config["wifi_ssid"] = wifi_ssid;
-  config["mqtt_server"] = mqtt_server;
-  config["mqtt_port"] = mqtt_port;
-  config["mqtt_client"] = mqtt_client_id;
-  config["upload_url"] = upload_url;
-  
-  char buffer[512];
-  serializeJson(doc, buffer);
-  
-  char topic[64];
-  snprintf(topic, sizeof(topic), "cam/%s/result", mqtt_client_id.c_str());
-  
-  mqttClient.publish(topic, buffer, 1);
-  Serial.printf("已发布配置: %s\n", buffer);
-}
 
 // ===========================
 // MQTT相关函数
@@ -381,7 +366,7 @@ void publishConfig(long cmdId) {
 void setupMQTT() {
   mqttClient.setServer(mqtt_server.c_str(), mqtt_port);
   mqttClient.setCallback(mqttCallback);
-  mqttClient.setBufferSize(512);
+  mqttClient.setBufferSize(2560);  // 需要足够大以发送完整配置(2048+)
   reconnectMQTT();
 }
 
@@ -526,6 +511,19 @@ void handleCommand(StaticJsonDocument<512>& doc) {
     snprintf(info, sizeof(info), "DHT读取间隔设为%d毫秒", interval);
     publishResult(cmdId, true, info);
     Serial.printf("DHT读取间隔已设置为 %d 毫秒\n", interval);
+    return;
+  }
+  
+  else if (strcmp(op, "set_status_interval") == 0) {
+    // 设置状态上报间隔
+    int interval = doc["val"] | 60000;
+    if (interval < 10000) interval = 10000;  // 最小10秒
+    if (interval > 300000) interval = 300000;  // 最大5分钟
+    statusReportInterval = interval;
+    char info[48];
+    snprintf(info, sizeof(info), "状态上报间隔设为%d毫秒", interval);
+    publishResult(cmdId, true, info);
+    Serial.printf("状态上报间隔已设置为 %d 毫秒\n", interval);
     return;
   }
 
@@ -824,4 +822,82 @@ void readAndPublishDHT() {
   
   mqttClient.publish(topic, buffer, 0);
   Serial.printf("温湿度: %.1f℃, %.1f%%\n", temperature, humidity);
+}
+
+/**
+ * 发布设备完整配置
+ * @param cmdId 命令ID，如果为0则仅发布配置，否则同时发布result
+ */
+void publishConfig(long cmdId) {
+  // 使用更大的JSON文档容量以容纳所有配置
+  StaticJsonDocument<2048> doc;
+  
+  // 基础信息
+  doc["clientId"] = mqtt_client_id;
+  doc["uptime"] = millis() / 1000;
+  doc["freeHeap"] = ESP.getFreeHeap();
+  
+  // WiFi配置
+  doc["wifiSsid"] = wifi_ssid;
+  doc["wifiIp"] = WiFi.localIP().toString();
+  doc["rssi"] = WiFi.RSSI();
+  
+  // MQTT配置
+  doc["mqttBroker"] = mqtt_server;
+  doc["mqttPort"] = mqtt_port;
+  
+  // LED状态
+  doc["ledStatus"] = ledStatus;
+  doc["ledBrightness"] = ledBrightness;
+  doc["redLedStatus"] = redLedStatus;
+  
+  // DHT和状态上报间隔
+  doc["dhtInterval"] = dhtReadInterval;
+  doc["statusInterval"] = statusReportInterval;
+  
+  // 上传URL
+  doc["uploadUrl"] = upload_url;
+  
+  // 摄像头配置
+  sensor_t *s = esp_camera_sensor_get();
+  if (s != NULL) {
+    doc["framesize"] = s->status.framesize;
+    doc["quality"] = s->status.quality;
+    doc["brightness"] = s->status.brightness;
+    doc["contrast"] = s->status.contrast;
+    doc["saturation"] = s->status.saturation;
+    doc["specialEffect"] = s->status.special_effect;
+    doc["whiteBalance"] = s->status.awb;
+    doc["awbGain"] = s->status.awb_gain;
+    doc["wbMode"] = s->status.wb_mode;
+    doc["exposureCtrl"] = s->status.aec;
+    doc["aec"] = s->status.aec;
+    doc["aecValue"] = s->status.aec_value;
+    doc["aec2"] = s->status.aec2;
+    doc["gainCtrl"] = s->status.agc;
+    doc["agcGain"] = s->status.agc_gain;
+    doc["gainceiling"] = s->status.gainceiling;
+    doc["bpc"] = s->status.bpc;
+    doc["wpc"] = s->status.wpc;
+    doc["rawGma"] = s->status.raw_gma;
+    doc["lenc"] = s->status.lenc;
+    doc["hmirror"] = s->status.hmirror;
+    doc["vflip"] = s->status.vflip;
+    doc["dcw"] = s->status.dcw;
+    doc["colorbar"] = s->status.colorbar;
+  }
+  
+  char buffer[2048];
+  serializeJson(doc, buffer);
+  
+  char topic[64];
+  snprintf(topic, sizeof(topic), "cam/%s/config", mqtt_client_id.c_str());
+  
+  mqttClient.publish(topic, buffer, 0);
+  Serial.printf("已发布配置: %d字节\n", strlen(buffer));
+  
+  // 如果有cmdId，同时发布result
+  if (cmdId > 0) {
+    publishResult(cmdId, true, "配置已发送");
+  }
 }

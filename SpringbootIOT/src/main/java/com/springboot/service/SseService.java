@@ -24,7 +24,7 @@ public interface SseService {
                           String result, String resultMsg);
     
     /**
-     * 移除连接
+     * 推送设备配置
      */
-    void removeConnection(String clientId);
+    void pushDeviceConfig(String clientId, Object config);
 }

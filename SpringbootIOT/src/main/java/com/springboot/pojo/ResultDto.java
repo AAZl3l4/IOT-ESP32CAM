@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ResultDto {
-    @com.fasterxml.jackson.annotation.JsonProperty("id")
+    @com.fasterxml.jackson.annotation.JsonProperty("id") // json属性名
     private long id;
     
     @com.fasterxml.jackson.annotation.JsonProperty("ok")

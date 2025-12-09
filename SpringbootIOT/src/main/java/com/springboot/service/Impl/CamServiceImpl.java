@@ -1,7 +1,7 @@
 package com.springboot.service.Impl;
 
 import com.springboot.configuration.MqttGateway;
-import com.springboot.pojo.DeviceStatus;
+import com.springboot.pojo.DeviceConfig;
 import com.springboot.pojo.ResultDto;
 import com.springboot.service.CamService;
 import com.springboot.utils.JsonUtil;
@@ -33,9 +33,9 @@ public class CamServiceImpl implements CamService {
 
     /**
      * 设备状态缓存 - 存储最新的设备状态
-     * Key: clientId, Value: DeviceStatus
+     * Key: clientId, Value: DeviceConfig
      */
-    private final ConcurrentHashMap<String, DeviceStatus> deviceStatusCache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, DeviceConfig> deviceStatusCache = new ConcurrentHashMap<>();
 
     /**
      * 监听mqtt返回消息的方法
@@ -62,7 +62,7 @@ public class CamServiceImpl implements CamService {
         }
         // 处理设备状态上报
         else if (topic.endsWith("/status")) {
-            DeviceStatus status = JsonUtil.fromJson(json, DeviceStatus.class);
+            DeviceConfig status = JsonUtil.fromJson(json, DeviceConfig.class);
             if (status != null) {
                 status.setLastUpdateTime(System.currentTimeMillis());
                 deviceStatusCache.put(status.getClientId(), status);
@@ -88,6 +88,20 @@ public class CamServiceImpl implements CamService {
                 }
             } catch (Exception e) {
                 log.error("解析DHT数据失败: {}", e.getMessage());
+            }
+        }
+        // 处理设备配置上报
+        else if (topic.endsWith("/config")) {
+            try {
+                DeviceConfig config = JsonUtil.fromJson(json, DeviceConfig.class);
+                if (config != null) {
+                    log.info("设备配置上报: clientId={}, ledBrightness={}, dhtInterval={}", 
+                            config.getClientId(), config.getLedBrightness(), config.getDhtInterval());
+                    // SSE实时推送到前端
+                    sseService.pushDeviceConfig(config.getClientId(), config);
+                }
+            } catch (Exception e) {
+                log.error("解析Config数据失败: {}", e.getMessage());
             }
         }
     }
@@ -184,7 +198,7 @@ public class CamServiceImpl implements CamService {
      */
     @Override
     public Map<String, Object> getDeviceStatus(String clientId) {
-        DeviceStatus status = deviceStatusCache.get(clientId);
+        DeviceConfig status = deviceStatusCache.get(clientId);
         
         Map<String, Object> result = new HashMap<>();
         if (status != null) {
@@ -193,7 +207,7 @@ public class CamServiceImpl implements CamService {
             result.put("uptime", status.getUptime());
             result.put("freeHeap", status.getFreeHeap());
             result.put("rssi", status.getRssi());
-            result.put("ledStatus", status.isLedStatus());
+            result.put("ledStatus", status.getLedStatus());
             result.put("ledBrightness", status.getLedBrightness());
             result.put("framesize", status.getFramesize());
             result.put("lastUpdateTime", status.getLastUpdateTime());
