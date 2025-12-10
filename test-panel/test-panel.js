@@ -701,7 +701,7 @@ async function loadDhtData() {
             const data = result.data;
 
             // 更新当前值
-            if (data.hasData) {
+            if (data.temperature != null) {
                 document.getElementById('currentTemp').textContent = data.temperature;
                 document.getElementById('currentHumidity').textContent = data.humidity;
                 document.getElementById('dhtUpdateTime').textContent = data.updateTime;
@@ -732,7 +732,7 @@ async function loadStatusData() {
             const data = result.data;
 
             // 更新图表
-            if (statusChart && data.hasData) {
+            if (statusChart && data.labels?.length > 0) {
                 statusChart.data.labels = data.labels;
                 statusChart.data.datasets[0].data = data.rssiData;
                 statusChart.data.datasets[1].data = data.freeHeapData;

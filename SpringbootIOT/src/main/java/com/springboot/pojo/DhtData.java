@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -26,12 +25,12 @@ public class DhtData {
     /**
      * 温度(℃)
      */
-    private BigDecimal temperature;
+    private Double temperature;
     
     /**
      * 湿度(%)
      */
-    private BigDecimal humidity;
+    private Double humidity;
     
     /**
      * 采集时间

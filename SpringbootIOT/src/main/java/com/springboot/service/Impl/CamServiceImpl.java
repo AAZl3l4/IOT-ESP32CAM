@@ -2,6 +2,7 @@ package com.springboot.service.Impl;
 
 import com.springboot.configuration.MqttGateway;
 import com.springboot.pojo.DeviceConfig;
+import com.springboot.pojo.DhtData;
 import com.springboot.pojo.ResultDto;
 import com.springboot.service.CamService;
 import com.springboot.utils.JsonUtil;
@@ -89,17 +90,13 @@ public class CamServiceImpl implements CamService {
         // 处理DHT22温湿度数据上报
         else if (topic.endsWith("/dht")) {
             try {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> dhtData = JsonUtil.fromJson(json, Map.class);
-                if (dhtData != null) {
-                    String clientId = (String) dhtData.get("clientId");
-                    double temperature = ((Number) dhtData.get("temperature")).doubleValue();
-                    double humidity = ((Number) dhtData.get("humidity")).doubleValue();
-                    
-                    dhtDataService.save(clientId, temperature, humidity);
+                DhtData dhtData = JsonUtil.fromJson(json, DhtData.class);
+                if (dhtData != null && dhtData.getClientId() != null) {
+                    dhtDataService.save(dhtData.getClientId(), dhtData.getTemperature(), dhtData.getHumidity());
                     // SSE实时推送到前端
-                    sseService.pushDhtData(clientId, temperature, humidity);
-                    log.info("温湿度数据: clientId={}, 温度={}℃, 湿度={}%", clientId, temperature, humidity);
+                    sseService.pushDhtData(dhtData.getClientId(), dhtData.getTemperature(), dhtData.getHumidity());
+                    log.info("温湿度数据: clientId={}, 温度={}℃, 湿度={}%", 
+                             dhtData.getClientId(), dhtData.getTemperature(), dhtData.getHumidity());
                 }
             } catch (Exception e) {
                 log.error("解析DHT数据失败: {}", e.getMessage());

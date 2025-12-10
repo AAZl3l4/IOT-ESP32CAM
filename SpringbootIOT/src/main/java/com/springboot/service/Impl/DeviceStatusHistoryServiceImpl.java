@@ -2,6 +2,7 @@ package com.springboot.service.Impl;
 
 import com.springboot.mapper.DeviceStatusHistoryMapper;
 import com.springboot.pojo.DeviceStatusHistory;
+import com.springboot.pojo.vo.StatusChartResponse;
 import com.springboot.service.DeviceStatusHistoryService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +42,7 @@ public class DeviceStatusHistoryServiceImpl implements DeviceStatusHistoryServic
     }
     
     @Override
-    public Map<String, Object> getChartData(String clientId, int limit) {
+    public StatusChartResponse getChartData(String clientId, int limit) {
         List<DeviceStatusHistory> list = mapper.findLatestByClientId(clientId, limit);
         
         // 反转列表（数据库查询是DESC，图表需要ASC）
@@ -57,12 +58,10 @@ public class DeviceStatusHistoryServiceImpl implements DeviceStatusHistoryServic
             freeHeapData.add(h.getFreeHeap() / 1024);  // 转换为KB
         }
         
-        Map<String, Object> result = new HashMap<>();
-        result.put("labels", labels);
-        result.put("rssiData", rssiData);
-        result.put("freeHeapData", freeHeapData);
-        result.put("hasData", !list.isEmpty());
-        
-        return result;
+        return StatusChartResponse.builder()
+                .labels(labels)
+                .rssiData(rssiData)
+                .freeHeapData(freeHeapData)
+                .build();
     }
 }

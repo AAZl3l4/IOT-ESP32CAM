@@ -1,9 +1,9 @@
 package com.springboot.service;
 
 import com.springboot.pojo.DhtData;
+import com.springboot.pojo.vo.DhtDashboardResponse;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * DHT22温湿度数据服务接口
@@ -28,5 +28,5 @@ public interface DhtDataService {
     /**
      * 获取最新数据和图表数据
      */
-    Map<String, Object> getDashboardData(String clientId, int chartLimit);
+    DhtDashboardResponse getDashboardData(String clientId, int chartLimit);
 }

@@ -1,8 +1,9 @@
 package com.springboot.service;
 
 import com.springboot.pojo.DeviceStatusHistory;
+import com.springboot.pojo.vo.StatusChartResponse;
+
 import java.util.List;
-import java.util.Map;
 
 /**
  * 设备状态历史服务接口
@@ -22,5 +23,5 @@ public interface DeviceStatusHistoryService {
     /**
      * 获取图表数据（时间标签+rssi+freeHeap数组）
      */
-    Map<String, Object> getChartData(String clientId, int limit);
+    StatusChartResponse getChartData(String clientId, int limit);
 }

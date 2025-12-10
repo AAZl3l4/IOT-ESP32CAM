@@ -19,9 +19,9 @@
 ### 💡 LED控制
 | 功能 | 说明 | API |
 |------|------|-----|
-| 闪光灯开关 | GPIO4白色LED | `POST /mqtt/led/{clientId}` |
-| PWM亮度调节 | 0-255级亮度 | `POST /mqtt/led-brightness/{clientId}` |
-| 红色指示灯 | GPIO33红色LED | `POST /mqtt/red-led/{clientId}` |
+| 闪光灯开关 | GPIO4白色LED，切换按钮 | `POST /mqtt/led/{clientId}` |
+| PWM亮度调节 | 0-255级亮度，实时回显 | `POST /mqtt/led-brightness/{clientId}` |
+| 红色指示灯 | GPIO33红色LED，切换按钮 | `POST /mqtt/red-led/{clientId}` |
 
 ### 🌡️ 温湿度监测 (DHT22)
 | 功能 | 说明 | API |
@@ -29,6 +29,13 @@
 | 实时数据采集 | 可配置采集间隔(1-60秒) | SSE实时推送 |
 | 历史数据图表 | Chart.js可视化 | `GET /mqtt/dht/dashboard/{clientId}` |
 | 采集间隔设置 | 远程配置 | `POST /mqtt/dht-interval/{clientId}` |
+
+### 📊 设备状态监控
+| 功能 | 说明 | API |
+|------|------|-----|
+| 实时状态监控 | 运行时间/空闲内存/WiFi信号/分辨率 | SSE推送 |
+| 状态历史图表 | RSSI和内存双Y轴折线图 | `GET /mqtt/status-history/chart/{clientId}` |
+| 数据持久化 | 存入MySQL数据库 | 自动保存 |
 
 ### ⚙️ 设备配置管理
 | 功能 | 说明 | API |
@@ -40,19 +47,10 @@
 | 恢复默认 | 重置为出厂配置 | `POST /mqtt/config/reset/{clientId}` |
 | 状态上报间隔 | 10秒-5分钟 | `POST /mqtt/cam/{clientId}/set_status_interval` |
 
-### 📊 设备状态监控
-| 指标 | 说明 |
-|------|------|
-| 运行时间 | 设备启动后运行时长 |
-| 空闲内存 | ESP32可用堆内存 |
-| WiFi信号 | RSSI信号强度(dBm) |
-| LED状态 | 当前亮度和开关状态 |
-| 分辨率 | 当前摄像头分辨率 |
-
 ### 📡 实时通信
 | 功能 | 说明 |
 |------|------|
-| SSE推送 | 温湿度数据、操作日志、设备配置实时推送 |
+| SSE推送 | 温湿度、设备状态、操作日志、配置实时推送 |
 | MQTT双向通信 | 指令下发/结果上报/状态同步 |
 
 ---
@@ -70,15 +68,15 @@ graph TB
         C[CamService<br/>业务逻辑]
         D[MqttGateway<br/>MQTT发送]
         E[SseService<br/>实时推送]
+        F[DeviceStatusHistoryService<br/>状态历史]
     end
     
     subgraph "MQTT Broker"
-        F[broker.emqx.io<br/>公共MQTT服务器]
+        G[broker.emqx.io<br/>公共MQTT服务器]
     end
     
     subgraph "ESP32-CAM"
-        G[WiFi模块]
-        H[MQTT客户端]
+        H[WiFi/MQTT模块]
         I[OV2640摄像头]
         J[DHT22传感器]
         K[LED控制]
@@ -86,12 +84,13 @@ graph TB
     
     A -->|HTTP/SSE| B
     B --> C --> D
-    D -->|发布指令| F
-    F -->|订阅指令| H
+    D -->|发布指令| G
+    G -->|订阅指令| H
     H --> I & J & K
     I -->|HTTP上传图片| B
-    H -->|发布状态/结果| F
-    F --> C --> E -->|SSE推送| A
+    H -->|发布状态/结果| G
+    G --> C --> E -->|SSE推送| A
+    C --> F -->|MySQL| DB[(数据库)]
 ```
 
 ---
@@ -100,42 +99,55 @@ graph TB
 
 ```
 IOT/
-├── CameraWebServer/          # ESP32-CAM固件 (Arduino)
-│   ├── CameraWebServer.ino   # 主程序 (~900行)
-│   ├── app_httpd.cpp         # MJPEG视频流服务器
-│   ├── board_config.h        # 开发板型号配置
-│   ├── camera_pins.h         # 摄像头GPIO引脚定义
-│   └── camera_index.h        # Web界面(备用)
+├── CameraWebServer/              # ESP32-CAM固件 (模块化)
+│   ├── CameraWebServer.ino       # 主程序入口 (~200行)
+│   ├── config.h                  # 全局配置和声明
+│   ├── config_manager.cpp        # Flash配置读写
+│   ├── mqtt_handler.cpp          # MQTT连接和消息处理
+│   ├── camera_control.cpp        # 摄像头拍照和上传
+│   ├── led_control.cpp           # LED和指示灯控制
+│   ├── dht_sensor.cpp            # DHT22温湿度传感器
+│   ├── status_publisher.cpp      # 状态发布
+│   ├── app_httpd.cpp             # MJPEG视频流服务器
+│   └── board_config.h            # 开发板型号配置
 │
-├── SpringbootIOT/            # Spring Boot后端
+├── SpringbootIOT/                # Spring Boot后端
 │   ├── src/main/java/com/springboot/
-│   │   ├── controller/       # REST API控制器
-│   │   │   ├── CamController.java      # 摄像头控制
-│   │   │   ├── DhtController.java      # 温湿度接口
-│   │   │   ├── SseController.java      # SSE端点
-│   │   │   └── OperationLogController.java  # 操作日志
-│   │   ├── service/          # 业务逻辑层
-│   │   │   ├── CamService.java         # 摄像头服务接口
-│   │   │   ├── SseService.java         # SSE服务接口
-│   │   │   └── Impl/                   # 服务实现
-│   │   ├── configuration/    # 配置类
-│   │   │   ├── MqttConfig.java         # MQTT连接配置
-│   │   │   └── MqttGateway.java        # MQTT发送网关
-│   │   └── pojo/             # 数据对象
-│   └── resources/
-│       └── application.yml   # 应用配置
+│   │   ├── controller/           # REST API控制器
+│   │   │   ├── CamController.java
+│   │   │   ├── DhtDataController.java
+│   │   │   ├── DeviceStatusHistoryController.java  # 状态历史
+│   │   │   ├── SseController.java
+│   │   │   └── OperationLogController.java
+│   │   ├── service/              # 业务逻辑层
+│   │   │   ├── CamService.java
+│   │   │   ├── SseService.java
+│   │   │   ├── DeviceStatusHistoryService.java
+│   │   │   └── Impl/
+│   │   ├── pojo/                 # 数据对象
+│   │   │   ├── DeviceConfig.java
+│   │   │   ├── DeviceStatusHistory.java   # 状态历史实体
+│   │   │   ├── vo/               # 视图对象
+│   │   │   │   └── DeviceStatusResponse.java
+│   │   │   └── dto/              # 数据传输对象
+│   │   │       ├── MqttCommand.java
+│   │   │       ├── WifiConfigCommand.java
+│   │   │       ├── MqttConfigCommand.java
+│   │   │       └── UploadUrlCommand.java
+│   │   ├── mapper/               # 数据库映射
+│   │   │   └── DeviceStatusHistoryMapper.java
+│   │   └── configuration/
+│   └── sql/
+│       └── schema.sql            # 数据库建表脚本
 │
-├── test-panel/               # Web测试面板
-│   ├── test-panel.html       # 主页面
-│   ├── test-panel.js         # 逻辑代码 (~800行)
-│   └── test-panel.css        # 样式
+├── test-panel/                   # Web测试面板
+│   ├── test-panel.html           # 主页面
+│   ├── test-panel.js             # 逻辑代码 (~1000行)
+│   └── test-panel.css            # 样式
 │
-├── libraries/                # Arduino依赖库
-│   ├── ArduinoJson/          # v6.21.3
-│   └── PubSubClient/         # v2.8
-│
-└── sql/                      # 数据库脚本
-    └── schema.sql            # 操作日志表
+└── libraries/                    # Arduino依赖库
+    ├── ArduinoJson/              # v6.21.3
+    └── PubSubClient/             # v2.8
 ```
 
 ---
@@ -158,10 +170,11 @@ IOT/
 - **spring-integration-mqtt** - MQTT支持
 - **MyBatis-Plus** 3.5.7 - 数据库ORM
 - **paho.client.mqttv3** 1.2.5 - MQTT客户端
+- **MySQL** - 数据持久化
 
 ### 前端
 - **原生HTML/CSS/JavaScript**
-- **Chart.js** 4.4.1 - 温湿度图表
+- **Chart.js** 4.4.1 - 温湿度和状态图表
 - **SSE (Server-Sent Events)** - 实时推送
 
 ---
@@ -189,7 +202,7 @@ cam/{clientId}/config   # ESP32 → 后端 (设备配置)
 {"id": 5741231234, "ok": true, "info": "上传成功"}
 ```
 
-**设备状态**:
+**设备状态** (精简版，60秒上报):
 ```json
 {
   "clientId": "esp32cam",
@@ -198,6 +211,7 @@ cam/{clientId}/config   # ESP32 → 后端 (设备配置)
   "rssi": -43,
   "ledStatus": false,
   "ledBrightness": 128,
+  "redLedStatus": false,
   "framesize": 11
 }
 ```
@@ -206,9 +220,25 @@ cam/{clientId}/config   # ESP32 → 后端 (设备配置)
 
 ## 🚀 快速开始
 
-### 1. ESP32-CAM固件烧录
+### 1. 数据库初始化
 
-1. 修改 `CameraWebServer.ino` 中的WiFi配置:
+```sql
+-- 执行 SpringbootIOT/sql/schema.sql 建表
+CREATE TABLE IF NOT EXISTS device_status_history (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    client_id VARCHAR(64) NOT NULL,
+    rssi INT NOT NULL,
+    free_heap INT NOT NULL,
+    uptime BIGINT NOT NULL,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_client_id (client_id),
+    INDEX idx_create_time (create_time)
+);
+```
+
+### 2. ESP32-CAM固件烧录
+
+1. 修改 `config.h` 中的WiFi配置:
 ```cpp
 #define DEFAULT_WIFI_SSID "你的WiFi名称"
 #define DEFAULT_WIFI_PASS "你的WiFi密码"
@@ -221,14 +251,14 @@ cam/{clientId}/config   # ESP32 → 后端 (设备配置)
 
 3. 烧录模式: GPIO0 连接 GND，上传后断开
 
-### 2. 启动后端
+### 3. 启动后端
 
 ```bash
 cd SpringbootIOT
 mvn spring-boot:run
 ```
 
-### 3. 使用测试面板
+### 4. 使用测试面板
 
 1. 打开 `test-panel/test-panel.html`
 2. 配置后端地址和设备ID
@@ -251,9 +281,22 @@ mvn spring-boot:run
 
 ## 📝 版本信息
 
-- **版本**: 2.1.0
-- **最后更新**: 2025-12-10
+- **版本**: 2.2.0
+- **最后更新**: 2025-12-11
 - **开发者**: IOT Project Team
+
+### 更新日志
+
+**v2.2.0** (2025-12-11)
+- 🔧 ESP32固件拆分为8个模块化文件
+- 📊 新增设备状态历史数据存储和图表展示
+- 🔄 LED按钮改为开关切换模式，带状态反馈
+- 🎨 页面加载增加全屏遮罩动画
+- 📦 后端Map改为DTO/VO实体类
+- 🔧 SSE新增status事件推送
+
+**v2.1.0** (2025-12-10)
+- 初始版本
 
 ---
 
