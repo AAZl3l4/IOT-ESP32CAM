@@ -27,4 +27,9 @@ public interface SseService {
      * 推送设备配置
      */
     void pushDeviceConfig(String clientId, Object config);
+    
+    /**
+     * 推送设备状态（rssi/freeHeap实时数据）
+     */
+    void pushDeviceStatus(String clientId, Object status);
 }

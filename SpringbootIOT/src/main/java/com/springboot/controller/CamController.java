@@ -1,6 +1,7 @@
 package com.springboot.controller;
 
 import com.springboot.pojo.Query.*;
+import com.springboot.pojo.vo.DeviceStatusResponse;
 import com.springboot.utils.Result;
 import com.springboot.service.CamService;
 import jakarta.validation.Valid;
@@ -89,8 +90,8 @@ public class CamController {
      * 获取设备状态
      */
     @GetMapping("/status/{clientId}")
-    public Result<Map<String, Object>> getStatus(@PathVariable @NotBlank String clientId) {
-        Map<String, Object> status = camService.getDeviceStatus(clientId);
+    public Result<DeviceStatusResponse> getStatus(@PathVariable @NotBlank String clientId) {
+        DeviceStatusResponse status = camService.getDeviceStatus(clientId);
         return Result.success(status);
     }
 
@@ -161,6 +162,16 @@ public class CamController {
         String cmdId = camService.getConfig(clientId);
         return Result.success("配置查询指令已发送，请查看MQTT响应", cmdId);
     }
+    
+    /**
+     * 刷新设备配置（POST方式，供前端刷新按钮使用）
+     */
+    @PostMapping("/cam/{clientId}/get_config")
+    public Result<String> refreshConfig(@PathVariable @NotBlank String clientId) {
+        String cmdId = camService.getConfig(clientId);
+        return Result.success("配置刷新指令已发送", cmdId);
+    }
+
 
     /**
      * 图片上传接口 (ESP32调用)
@@ -194,33 +205,6 @@ public class CamController {
     }
 
     /**
-     * 获取所有API文档
-     */
-    @GetMapping("/api-docs")
-    public Result<Map<String, Object>> apiDocs() {
-        Map<String, String> apis = new HashMap<>();
-        apis.put("POST /mqtt/capture/{clientId}", "触发拍照(1080p)");
-        apis.put("POST /mqtt/led/{clientId}", "LED开关控制 {\"value\":0/1}");
-        apis.put("POST /mqtt/led-brightness/{clientId}", "LED亮度调节 {\"brightness\":0-255}");
-        apis.put("POST /mqtt/param/{clientId}", "摄像头参数设置 {\"name\":\"xxx\",\"value\":0}");
-        apis.put("GET /mqtt/status/{clientId}", "查询设备状态");
-        apis.put("POST /mqtt/stream-resolution/{clientId}", "设置视频流分辨率 {\"framesize\":7/11/14}");
-        apis.put("POST /mqtt/config/wifi/{clientId}", "设置WiFi {\"ssid\":\"xxx\",\"password\":\"xxx\"}");
-        apis.put("POST /mqtt/config/mqtt/{clientId}", "设置MQTT {\"server\":\"xxx\",\"port\":1883}");
-        apis.put("POST /mqtt/config/upload-url/{clientId}", "设置上传URL {\"url\":\"http://...\"}");
-        apis.put("POST /mqtt/config/reset/{clientId}", "重置为默认配置");
-        apis.put("GET /mqtt/config/{clientId}", "查询设备配置");
-        apis.put("POST /mqtt/cam/upload", "图片上传(ESP32内部调用)");
-        
-        Map<String, Object> data = new HashMap<>();
-        data.put("version", "2.0.0");
-        data.put("streamUrl", "http://{esp32-ip}/stream");
-        data.put("apis", apis);
-        
-        return Result.success("ESP32-CAM MQTT IoT API", data);
-    }
-
-    /**
      * 设置DHT读取间隔
      */
     @PostMapping("/dht-interval/{clientId}")
@@ -229,5 +213,20 @@ public class CamController {
             @RequestBody @Valid DhtIntervalRequest request) {
         String cmdId = camService.setDhtInterval(clientId, request.getInterval());
         return Result.success("DHT间隔设置指令已发送", cmdId);
+    }
+    
+    /**
+     * 设置状态上报间隔
+     */
+    @PostMapping("/cam/{clientId}/set_status_interval")
+    public Result<String> setStatusInterval(
+            @PathVariable @NotBlank String clientId,
+            @RequestBody Map<String, Integer> request) {
+        Integer interval = request.get("interval");
+        if (interval == null || interval < 1000) {
+            return Result.error("间隔不能小于1秒");
+        }
+        String cmdId = camService.setStatusInterval(clientId, interval);
+        return Result.success("状态上报间隔设置指令已发送", cmdId);
     }
 }

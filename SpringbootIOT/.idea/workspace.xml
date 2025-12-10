@@ -5,23 +5,46 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9a677edb-81bd-40b4-94e9-5c93d9e56396" name="更改" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/springboot/pojo/DeviceConfig.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/springboot/pojo/Query/StatusIntervalRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../CameraWebServer/camera_control.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../CameraWebServer/config.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../CameraWebServer/config_manager.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../CameraWebServer/dht_sensor.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../CameraWebServer/led_control.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../CameraWebServer/mqtt_handler.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../CameraWebServer/status_publisher.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/springboot/controller/DeviceStatusHistoryController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/springboot/mapper/DeviceStatusHistoryMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/springboot/pojo/DeviceStatusHistory.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/springboot/pojo/vo/DeviceStatusResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/springboot/service/DeviceStatusHistoryService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/springboot/service/Impl/DeviceStatusHistoryServiceImpl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../test-panel/test-panel.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../test-panel/test-panel.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../test-panel/test-panel.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../CameraWebServer/CameraWebServer.ino" beforeDir="false" afterPath="$PROJECT_DIR$/../CameraWebServer/CameraWebServer.ino" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/springboot/configuration/MqttConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/springboot/configuration/MqttConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../README.md" beforeDir="false" afterPath="$PROJECT_DIR$/../README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sql/schema.sql" beforeDir="false" afterPath="$PROJECT_DIR$/sql/schema.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/springboot/configuration/GlobalExceptionHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/springboot/configuration/GlobalExceptionHandler.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/springboot/controller/CamController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/springboot/controller/CamController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/springboot/controller/SseController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/springboot/controller/SseController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/springboot/pojo/DeviceStatus.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/springboot/pojo/ResultDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/springboot/pojo/ResultDto.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/springboot/pojo/vo/DhtDataVo.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/springboot/pojo/vo/DhtSseVo.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/springboot/pojo/vo/LogSseVo.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/springboot/pojo/vo/OperationLogVo.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/springboot/pojo/DeviceConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/springboot/pojo/DeviceConfig.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/springboot/service/CamService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/springboot/service/CamService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/springboot/service/Impl/CamServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/springboot/service/Impl/CamServiceImpl.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/springboot/service/Impl/SseServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/springboot/service/Impl/SseServiceImpl.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/springboot/service/SseService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/springboot/service/SseService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../test-panel.html" beforeDir="false" afterPath="$PROJECT_DIR$/../test-panel.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/springboot/utils/OperationDesc.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/springboot/utils/OperationDesc.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/springboot/configuration/GlobalExceptionHandler.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/springboot/configuration/GlobalExceptionHandler.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/springboot/controller/CamController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/springboot/controller/CamController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/springboot/pojo/DeviceConfig.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/springboot/pojo/DeviceConfig.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/springboot/pojo/Query/StatusIntervalRequest.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/springboot/service/CamService.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/springboot/service/CamService.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/springboot/service/Impl/CamServiceImpl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/springboot/service/Impl/CamServiceImpl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/springboot/service/Impl/SseServiceImpl$ConnectedMessage.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/springboot/service/Impl/SseServiceImpl$ConnectedMessage.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/springboot/service/Impl/SseServiceImpl$DhtDataPush.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/springboot/service/Impl/SseServiceImpl$DhtDataPush.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/springboot/service/Impl/SseServiceImpl$OperationLogPush.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/springboot/service/Impl/SseServiceImpl$OperationLogPush.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/springboot/service/Impl/SseServiceImpl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/springboot/service/Impl/SseServiceImpl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/springboot/service/SseService.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/springboot/service/SseService.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/springboot/utils/OperationDesc.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/springboot/utils/OperationDesc.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../test-panel.html" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -54,35 +77,35 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Maven.Springboot [clean].executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RequestMappingsPanelOrder0": "0",
-    "RequestMappingsPanelOrder1": "1",
-    "RequestMappingsPanelWidth0": "75",
-    "RequestMappingsPanelWidth1": "75",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "Spring Boot.SpringbootApplication.executor": "Run",
-    "augment.onboarding.workspace.first.indexed.E:/ACodes/IOT/SpringbootIOT": "true",
-    "git-widget-placeholder": "main",
-    "ignore.virus.scanning.warn.message": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "E:/ACodes/IOT/SpringbootIOT/pom.xml",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "模块",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "project.propVCSSupport.Confirmation",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Maven.Springboot [clean].executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
+    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
+    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
+    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;Spring Boot.SpringbootApplication.executor&quot;: &quot;Run&quot;,
+    &quot;augment.onboarding.workspace.first.indexed.E:/ACodes/IOT/SpringbootIOT&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;E:/ACodes/IOT/SpringbootIOT/pom.xml&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;模块&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;project.propVCSSupport.Confirmation&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager">
     <configuration name="SpringbootApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
       <module name="Springboot" />
@@ -110,7 +133,8 @@
       <workItem from="1765078146941" duration="26491000" />
       <workItem from="1765154321636" duration="49000" />
       <workItem from="1765201577246" duration="9667000" />
-      <workItem from="1765292304423" duration="5280000" />
+      <workItem from="1765292304423" duration="5417000" />
+      <workItem from="1765369073488" duration="7844000" />
     </task>
     <servers />
   </component>

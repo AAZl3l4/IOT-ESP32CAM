@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="CoolRequestCommonStatePersistent">
-    <option name="searchCache" value="esp32cam" />
+    <option name="searchCache" value="Map&lt;String, Object&gt;" />
   </component>
 </project>

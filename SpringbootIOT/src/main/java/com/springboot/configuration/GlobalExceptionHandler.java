@@ -48,6 +48,17 @@ public class GlobalExceptionHandler {
     }
     
     /**
+     * 处理IO异常(SSE连接断开等)
+     * 这是正常现象，不需要记录ERROR日志
+     */
+    @ExceptionHandler(java.io.IOException.class)
+    public void handleIOException(java.io.IOException e) {
+        // SSE客户端断开连接会抛出此异常，属于正常现象
+        // 静默处理，不记录日志，不返回响应
+        log.debug("IO异常(SSE断开): {}", e.getMessage());
+    }
+    
+    /**
      * 处理其他异常
      */
     @ExceptionHandler(Exception.class)

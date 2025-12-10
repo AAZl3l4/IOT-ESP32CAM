@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32-CAM 控制面板</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="test-panel.css">
+</head>
+
+<body>
+    <!-- 全页加载遮罩 -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <div class="loading-text">正在连接设备...</div>
+    </div>
+
+    <div class="container" id="mainContainer" style="display: none;">
+        <h1>🎥 ESP32-CAM 控制面板 <span id="sseStatus" style="font-size: 14px; margin-left: 15px; color: #f44336;">🔴
+                离线</span></h1>
+        <p class="subtitle">快速测试所有功能</p>
+
+        <!-- 基础配置 -->
+        <div class="section">
+            <h2>⚙️ 基础配置</h2>
+            <div class="input-group">
+                <label>后端地址</label>
+                <input type="text" id="baseUrl" value="http://192.168.124.68:8080"
+                    placeholder="http://192.168.124.68:8080">
+            </div>
+            <div class="input-group">
+                <label>设备ID (Client ID)</label>
+                <input type="text" id="clientId" value="esp32cam" placeholder="esp32cam">
+            </div>
+        </div>
+
+        <!-- 视频流显示 -->
+        <div class="section">
+            <h2>📺 实时视频流</h2>
+            <div class="input-group">
+                <label>ESP32-CAM IP地址</label>
+                <input type="text" id="esp32Ip" placeholder="192.168.124.100" value="">
+            </div>
+            <button class="btn-primary" onclick="startStream()" style="width: 100%; margin-bottom: 15px;">▶️
+                启动视频流</button>
+            <div id="streamContainer"
+                style="display: none; background: #000; border-radius: 8px; overflow: hidden; position: relative;">
+                <img id="videoStream" style="width: 100%; height: auto; display: block;" alt="视频流加载中...">
+                <div style="position: absolute; top: 10px; right: 10px;">
+                    <button class="btn-danger" onclick="stopStream()" style="padding: 8px 15px; font-size: 12px;">⏹️
+                        停止</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 温湿度监控 -->
+        <div class="section">
+            <h2>🌡️ 温湿度监控</h2>
+            <div style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;">
+                <div
+                    style="flex: 1; min-width: 150px; background: linear-gradient(135deg, #ff6b6b, #ee5a24); color: white; padding: 20px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 14px; opacity: 0.9;">🌡️ 温度</div>
+                    <div id="currentTemp" style="font-size: 36px; font-weight: bold; margin: 10px 0;">--</div>
+                    <div style="font-size: 14px;">℃</div>
+                </div>
+                <div
+                    style="flex: 1; min-width: 150px; background: linear-gradient(135deg, #74b9ff, #0984e3); color: white; padding: 20px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 14px; opacity: 0.9;">💧 湿度</div>
+                    <div id="currentHumidity" style="font-size: 36px; font-weight: bold; margin: 10px 0;">--</div>
+                    <div style="font-size: 14px;">%</div>
+                </div>
+                <div
+                    style="flex: 1; min-width: 150px; background: linear-gradient(135deg, #a29bfe, #6c5ce7); color: white; padding: 20px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 14px; opacity: 0.9;">⛱️ 更新时间</div>
+                    <div id="dhtUpdateTime" style="font-size: 24px; font-weight: bold; margin: 10px 0;">--:--:--</div>
+                    <div style="font-size: 14px;">实时</div>
+                </div>
+            </div>
+            <div style="background: #f8f9fa; border-radius: 12px; padding: 15px;">
+                <canvas id="dhtChart" height="200"></canvas>
+            </div>
+            <div style="margin-top: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <label style="font-weight: bold;">⏱️ 读取间隔:</label>
+                <select id="dhtInterval" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ddd;">
+                    <option value="1000">1秒</option>
+                    <option value="2000">2秒</option>
+                    <option value="5000">5秒</option>
+                    <option value="10000">10秒</option>
+                    <option value="30000">30秒</option>
+                    <option value="60000">60秒</option>
+                </select>
+                <button class="btn-info" onclick="setDhtInterval()">📤 设置间隔</button>
+            </div>
+        </div>
+
+        <!-- 摄像头控制 -->
+        <div class="section">
+            <h2>📷 摄像头控制</h2>
+            <div class="btn-group">
+                <button class="btn-primary" onclick="capture()">📸 拍照 (1080p)</button>
+                <button class="btn-success" onclick="setResolution(7)">480p 视频流</button>
+                <button class="btn-success" onclick="setResolution(11)">720p 视频流</button>
+                <button class="btn-warning" onclick="setResolution(14)">1080p 视频流</button>
+            </div>
+        </div>
+
+        <!-- LED控制 -->
+        <div class="section">
+            <h2>💡 LED 控制</h2>
+            <div class="input-group">
+                <label>LED亮度 (0-255)</label>
+                <input type="range" id="brightness" min="0" max="255" value="0"
+                    oninput="document.getElementById('brightnessValue').textContent=this.value">
+                <span id="brightnessValue" style="font-weight: bold; color: #667eea;">--</span>
+            </div>
+            <div class="btn-group" style="grid-template-columns: 1fr 1fr;">
+                <button id="ledToggleBtn" class="btn-toggle-off" onclick="toggleLed()">
+                    <span id="ledIcon">🌑</span> 闪光灯
+                </button>
+                <button id="redLedToggleBtn" class="btn-toggle-off" onclick="toggleRedLed()">
+                    <span id="redLedIcon">⚫</span> 指示灯
+                </button>
+            </div>
+        </div>
+
+        <!-- 设备状态 -->
+        <div class="section">
+            <h2>📊 设备状态 <span id="statusLoading" class="loading" style="display: none;"></span></h2>
+            <div id="deviceStatusPanel" style="display: none;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px;">
+                    <div
+                        style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 15px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 12px; opacity: 0.9;">⏱️ 运行时间</div>
+                        <div id="statusUptime" style="font-size: 20px; font-weight: bold; margin: 5px 0;">--</div>
+                    </div>
+                    <div
+                        style="background: linear-gradient(135deg, #11998e, #38ef7d); color: white; padding: 15px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 12px; opacity: 0.9;">💾 空闲内存</div>
+                        <div id="statusFreeHeap" style="font-size: 20px; font-weight: bold; margin: 5px 0;">--</div>
+                    </div>
+                    <div
+                        style="background: linear-gradient(135deg, #f093fb, #f5576c); color: white; padding: 15px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 12px; opacity: 0.9;">📶 WiFi信号</div>
+                        <div id="statusRssi" style="font-size: 20px; font-weight: bold; margin: 5px 0;">--</div>
+                    </div>
+                    <div
+                        style="background: linear-gradient(135deg, #fa709a, #fee140); color: white; padding: 15px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 12px; opacity: 0.9;">📷 分辨率</div>
+                        <div id="statusFramesize" style="font-size: 20px; font-weight: bold; margin: 5px 0;">--</div>
+                    </div>
+                </div>
+                <!-- WiFi信号和内存折线图 -->
+                <div style="margin-top: 20px; background: #f8f9fa; border-radius: 12px; padding: 15px;">
+                    <h4 style="margin: 0 0 10px 0; color: #667eea;">📈 实时监控</h4>
+                    <div style="height: 200px; position: relative;">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 配置管理 -->
+        <div class="section">
+            <h2>🔧 配置管理</h2>
+
+            <div class="input-group">
+                <label>WiFi SSID</label>
+                <input type="text" id="wifiSsid" placeholder="新WiFi名称">
+            </div>
+            <div class="input-group">
+                <label>WiFi 密码</label>
+                <div style="position: relative;">
+                    <input type="password" id="wifiPass" placeholder="WiFi密码" style="padding-right: 40px;">
+                    <span id="togglePassword" onclick="togglePasswordVisibility()"
+                        style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 18px; user-select: none;">
+                        👁️
+                    </span>
+                </div>
+            </div>
+            <button class="btn-warning" onclick="setWiFi()" style="width: 100%; margin-bottom: 15px;">⚠️ 设置WiFi
+                (设备将重启)</button>
+
+            <div class="input-group">
+                <label>MQTT 服务器</label>
+                <input type="text" id="mqttServer" placeholder="broker.emqx.io">
+            </div>
+            <div class="input-group">
+                <label>MQTT 端口</label>
+                <input type="number" id="mqttPort" placeholder="1883">
+            </div>
+            <button class="btn-warning" onclick="setMQTT()" style="width: 100%; margin-bottom: 15px;">⚠️ 设置MQTT
+                (设备将重启)</button>
+
+            <div class="input-group">
+                <label>上传URL</label>
+                <input type="text" id="uploadUrl" placeholder="http://192.168.124.68:8080/mqtt/cam/upload">
+            </div>
+            <button class="btn-info" onclick="setUploadUrl()" style="width: 100%; margin-bottom: 15px;">💾
+                设置上传URL</button>
+
+            <div style="margin-top: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <label style="font-weight: bold;">📡 状态上报间隔:</label>
+                <select id="statusReportInterval"
+                    style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ddd;">
+                    <option value="10000">10秒</option>
+                    <option value="30000">30秒</option>
+                    <option value="60000">60秒</option>
+                    <option value="120000">2分钟</option>
+                    <option value="300000">5分钟</option>
+                </select>
+                <button class="btn-info" onclick="setStatusInterval()">📤 设置</button>
+            </div>
+
+            <div class="btn-group" style="margin-top: 15px;">
+                <button class="btn-primary" onclick="refreshConfig()">🔄 刷新配置</button>
+                <button class="btn-danger" onclick="resetConfig()">⚠️ 恢复默认</button>
+            </div>
+        </div>
+
+
+        <!-- 摄像头参数 -->
+        <div class="section">
+            <h2>🎨 摄像头参数调整</h2>
+
+            <div style="margin-bottom: 15px;">
+                <strong>亮度 (Brightness)</strong>
+                <div class="btn-group" style="grid-template-columns: repeat(3, 1fr);">
+                    <button class="btn-info" onclick="quickParam('brightness', -2)">🌑 最暗</button>
+                    <button class="btn-info" onclick="quickParam('brightness', 0)">⚪ 默认</button>
+                    <button class="btn-info" onclick="quickParam('brightness', 2)">☀️ 最亮</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <strong>对比度 (Contrast)</strong>
+                <div class="btn-group" style="grid-template-columns: repeat(3, 1fr);">
+                    <button class="btn-info" onclick="quickParam('contrast', -2)">📉 低</button>
+                    <button class="btn-info" onclick="quickParam('contrast', 0)">⚪ 默认</button>
+                    <button class="btn-info" onclick="quickParam('contrast', 2)">📈 高</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <strong>饱和度 (Saturation)</strong>
+                <div class="btn-group" style="grid-template-columns: repeat(3, 1fr);">
+                    <button class="btn-info" onclick="quickParam('saturation', -2)">🎨 淡</button>
+                    <button class="btn-info" onclick="quickParam('saturation', 0)">⚪ 默认</button>
+                    <button class="btn-info" onclick="quickParam('saturation', 2)">🌈 鲜艳</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <strong>特效 (Special Effect)</strong>
+                <div class="btn-group">
+                    <button class="btn-primary" onclick="quickParam('special_effect', 0)">无特效</button>
+                    <button class="btn-primary" onclick="quickParam('special_effect', 1)">负片</button>
+                    <button class="btn-primary" onclick="quickParam('special_effect', 2)">黑白</button>
+                    <button class="btn-primary" onclick="quickParam('special_effect', 3)">复古</button>
+                </div>
+            </div>
+
+            <div>
+                <strong>JPEG质量</strong>
+                <div class="btn-group" style="grid-template-columns: repeat(3, 1fr);">
+                    <button class="btn-success" onclick="quickParam('quality', 10)">🏆 高质量</button>
+                    <button class="btn-success" onclick="quickParam('quality', 20)">⚪ 标准</button>
+                    <button class="btn-success" onclick="quickParam('quality', 40)">⚡ 快速</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 设备状态卡片（旧版，保留兼容） -->
+        <div class="section" id="statusCard" style="display: none;">
+            <h2>📊 设备状态</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div class="status-item">
+                    <div class="status-label">🟢 在线状态</div>
+                    <div class="status-value" id="statusOnline">-</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">⏱️ 运行时间</div>
+                    <div class="status-value" id="statusUptime">-</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">💾 空闲内存</div>
+                    <div class="status-value" id="statusMemory">-</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">📡 WiFi信号</div>
+                    <div class="status-value" id="statusSignal">-</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">💡 LED状态</div>
+                    <div class="status-value" id="statusLed">-</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">🔆 LED亮度</div>
+                    <div class="status-value" id="statusBrightness">-</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">📹 分辨率</div>
+                    <div class="status-value" id="statusFramesize">-</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">🔄 最后更新</div>
+                    <div class="status-value" id="statusLastUpdate">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📜 操作日志 <span style="font-size: 12px; color: #4caf50; font-weight: normal;">🔴 实时推送</span></h2>
+            <div id="logContainer" style="background: white; border-radius: 8px; max-height: 400px; overflow-y: auto;">
+                <!-- 日志将在这里显示 -->
+            </div>
+        </div>
+
+        <!-- 响应结果 -->
+        <div class="response">
+            <h3>📡 API 响应</h3>
+            <pre id="responseText">等待操作...</pre>
+        </div>
+    </div>
+
+    <script src="test-panel.js"></script>
+</body>
+
+</html>

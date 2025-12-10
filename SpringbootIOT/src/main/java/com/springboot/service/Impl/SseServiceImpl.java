@@ -77,10 +77,20 @@ public class SseServiceImpl implements SseService {
         broadcastAsync("config", config);
     }
     
+    @Override
+    public void pushDeviceStatus(String clientId, Object status) {
+        broadcastAsync("status", status);
+    }
+    
     private void broadcastAsync(String eventName, Object data) {
+        // 使用线程安全的方式广播，捕获所有异常防止日志刷屏
         new Thread(() -> {
             for (SseEmitter emitter : emitterList) {
-                sendSafe(emitter, eventName, data);
+                try {
+                    sendSafe(emitter, eventName, data);
+                } catch (Throwable ignored) {
+                    // 完全静默处理，防止任何异常泄露
+                }
             }
         }).start();
     }
@@ -93,11 +103,13 @@ public class SseServiceImpl implements SseService {
         } catch (java.io.IOException e) {
             // 客户端断开连接，静默移除（这是正常现象）
             emitterList.remove(emitter);
-            log.debug("SSE客户端已断开，移除连接");
+            // 使用debug级别，不会输出到控制台
+        } catch (IllegalStateException e) {
+            // emitter已关闭
+            emitterList.remove(emitter);
         } catch (Exception e) {
             // 其他异常也静默处理
             emitterList.remove(emitter);
-            log.debug("SSE发送失败，移除连接: {}", e.getMessage());
         }
     }
     

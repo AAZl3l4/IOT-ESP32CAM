@@ -23,6 +23,11 @@ public class DeviceConfig {
     private String wifiSsid;
     
     /**
+     * WiFi密码
+     */
+    private String wifiPassword;
+    
+    /**
      * WiFi IP地址
      */
     private String wifiIp;
@@ -186,6 +191,11 @@ public class DeviceConfig {
      * 状态上报间隔(毫秒)
      */
     private Integer statusInterval;
+    
+    /**
+     * 上传URL
+     */
+    private String uploadUrl;
     
     /**
      * 设备运行时间(秒)

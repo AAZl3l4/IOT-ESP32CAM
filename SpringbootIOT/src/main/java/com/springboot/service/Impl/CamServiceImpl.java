@@ -30,6 +30,9 @@ public class CamServiceImpl implements CamService {
     
     @Autowired
     private com.springboot.service.SseService sseService;
+    
+    @Autowired
+    private com.springboot.service.DeviceStatusHistoryService deviceStatusHistoryService;
 
     /**
      * 设备状态缓存 - 存储最新的设备状态
@@ -66,6 +69,18 @@ public class CamServiceImpl implements CamService {
             if (status != null) {
                 status.setLastUpdateTime(System.currentTimeMillis());
                 deviceStatusCache.put(status.getClientId(), status);
+                
+                // 保存状态历史到数据库
+                deviceStatusHistoryService.save(
+                    status.getClientId(), 
+                    status.getRssi(), 
+                    status.getFreeHeap(), 
+                    status.getUptime()
+                );
+                
+                // 推送状态数据到前端
+                sseService.pushDeviceStatus(status.getClientId(), status);
+                
                 log.info("设备状态更新: clientId={}, uptime={}s, freeHeap={}, rssi={}", 
                          status.getClientId(), status.getUptime(), 
                          status.getFreeHeap(), status.getRssi());
@@ -197,31 +212,31 @@ public class CamServiceImpl implements CamService {
      * 获取设备状态
      */
     @Override
-    public Map<String, Object> getDeviceStatus(String clientId) {
+    public com.springboot.pojo.vo.DeviceStatusResponse getDeviceStatus(String clientId) {
         DeviceConfig status = deviceStatusCache.get(clientId);
         
-        Map<String, Object> result = new HashMap<>();
         if (status != null) {
-            result.put("found", true);
-            result.put("clientId", status.getClientId());
-            result.put("uptime", status.getUptime());
-            result.put("freeHeap", status.getFreeHeap());
-            result.put("rssi", status.getRssi());
-            result.put("ledStatus", status.getLedStatus());
-            result.put("ledBrightness", status.getLedBrightness());
-            result.put("framesize", status.getFramesize());
-            result.put("lastUpdateTime", status.getLastUpdateTime());
-            
             // 计算设备是否在线(超过60秒未上报则视为离线)
             long timeDiff = System.currentTimeMillis() - status.getLastUpdateTime();
-            result.put("online", timeDiff < 60000);
+            
+            return com.springboot.pojo.vo.DeviceStatusResponse.builder()
+                    .found(true)
+                    .clientId(status.getClientId())
+                    .uptime(status.getUptime())
+                    .freeHeap(status.getFreeHeap())
+                    .rssi(status.getRssi())
+                    .ledStatus(status.getLedStatus())
+                    .ledBrightness(status.getLedBrightness())
+                    .framesize(status.getFramesize())
+                    .lastUpdateTime(status.getLastUpdateTime())
+                    .online(timeDiff < 60000)
+                    .build();
         } else {
-            result.put("found", false);
-            result.put("message", "未找到该设备状态信息");
+            return com.springboot.pojo.vo.DeviceStatusResponse.builder()
+                    .found(false)
+                    .message("未找到该设备状态信息")
+                    .build();
         }
-
-
-        return result;
     }
 
     /**
@@ -338,6 +353,24 @@ public class CamServiceImpl implements CamService {
         log.info("发送DHT间隔设置指令: clientId={}, cmdId={}, interval={}ms", clientId, id, interval);
         // 记录操作日志
         operationLogService.log(clientId, "set_dht_interval", id, interval);
+        return "cmd queued " + id;
+    }
+    
+    /**
+     * 设置状态上报间隔
+     */
+    @Override
+    public String setStatusInterval(String clientId, int interval) {
+        // 限制范围 1000-300000 毫秒(1秒-5分钟)
+        if (interval < 1000) interval = 1000;
+        if (interval > 300000) interval = 300000;
+        
+        long id = generateCmdId();
+        String json = JsonUtil.toJson(Map.of("id", id, "op", "set_status_interval", "val", interval));
+        mqttGateway.send("cam/" + clientId + "/cmd", json);
+        log.info("发送状态上报间隔设置指令: clientId={}, cmdId={}, interval={}ms", clientId, id, interval);
+        // 记录操作日志
+        operationLogService.log(clientId, "set_status_interval", id, interval);
         return "cmd queued " + id;
     }
 }

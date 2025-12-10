@@ -35,6 +35,7 @@ public class OperationDesc {
         OPERATION_MAP.put("reset_config", "重置配置");
         OPERATION_MAP.put("get_config", "查询配置");
         OPERATION_MAP.put("set_dht_interval", "DHT读取间隔设置");
+        OPERATION_MAP.put("set_status_interval", "状态上报间隔设置");
     }
     
     /**

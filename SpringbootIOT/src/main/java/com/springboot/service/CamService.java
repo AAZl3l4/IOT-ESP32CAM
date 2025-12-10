@@ -1,6 +1,6 @@
 package com.springboot.service;
 
-import java.util.Map;
+import com.springboot.pojo.vo.DeviceStatusResponse;
 
 public interface CamService {
     /**
@@ -48,7 +48,7 @@ public interface CamService {
      * @param clientId ESP 的 clientId
      * @return 设备状态信息
      */
-    Map<String, Object> getDeviceStatus(String clientId);
+    DeviceStatusResponse getDeviceStatus(String clientId);
 
     /**
      * 设置视频流分辨率
@@ -106,4 +106,12 @@ public interface CamService {
      * @return 命令序号
      */
     String setDhtInterval(String clientId, int interval);
+    
+    /**
+     * 设置状态上报间隔
+     * @param clientId ESP 的 clientId
+     * @param interval 间隔(毫秒), 1000-300000
+     * @return 命令序号
+     */
+    String setStatusInterval(String clientId, int interval);
 }
