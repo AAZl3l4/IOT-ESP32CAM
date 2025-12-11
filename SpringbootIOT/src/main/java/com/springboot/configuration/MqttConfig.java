@@ -27,34 +27,39 @@ public class MqttConfig {
     public MqttPahoClientFactory factory() {
         DefaultMqttPahoClientFactory factory = new DefaultMqttPahoClientFactory();
         MqttConnectOptions options = new MqttConnectOptions();
-        options.setServerURIs(new String[]{url});
-        // options.setUserName("user");
+        options.setServerURIs(new String[]{url}); //mqtt地址
+        // options.setUserName("user"); //账户密码
         // options.setPassword("pass".toCharArray());
+        // options.setCleanSession(true); //是否不需要离线消息
         factory.setConnectionOptions(options);
         return factory;
     }
 
-    /* 下行通道：服务器→ESP */
+    /* 发送通道：服务器→ESP */
     @Bean
     @ServiceActivator(inputChannel = "cmdOutboundChannel")
     public MessageHandler cmdOutbound(MqttPahoClientFactory factory) {
+        //指定服务器发布端的客户端ID(在Broker中显示的)和MQTT客户端工厂
         MqttPahoMessageHandler h = new MqttPahoMessageHandler("spring-cam-cmd", factory);
-        h.setAsync(true);
+        h.setAsync(true); //异步发送
         return h;
     }
 
-    /* 上行通道：ESP→服务器 */
+    /* 接收通道：ESP→服务器 */
     @Bean
     public MessageProducer inbound(MqttPahoClientFactory factory) {
+        //指定服务器订阅端的客户端ID(在Broker中显示的)和MQTT客户端工厂和接收的主题 + 是通配符
         MqttPahoMessageDrivenChannelAdapter a =
                 new MqttPahoMessageDrivenChannelAdapter("spring-cam-result", factory, 
                     "cam/+/upload", "cam/+/result", "cam/+/status", "cam/+/dht", "cam/+/config");
-        a.setCompletionTimeout(5000);
-        a.setQos(1);
-        a.setOutputChannel(mqttInputChannel());
+        a.setCompletionTimeout(5000); //发送订阅请求的超时时间
+        a.setQos(1); //确认机制 至少一次
+        a.setOutputChannel(mqttInputChannel()); //指定接收通道
         return a;
     }
 
+    @Bean
+    public MessageChannel cmdOutboundChannel() {return new DirectChannel();}
     @Bean
     public MessageChannel mqttInputChannel() {
         return new DirectChannel();

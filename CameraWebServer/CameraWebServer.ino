@@ -190,10 +190,10 @@ void loop() {
   }
   mqttClient.loop();
 
-  // 定期上报设备状态（使用可配置间隔，默认60秒）
+  // 定期上报设备状态（精简版，默认60秒）
+  // 完整配置只在页面请求时发送（通过get_config指令）
   if (millis() - lastStatusReport >= statusReportInterval) {
-    publishStatus();
-    publishConfig();
+    publishStatus();  // 只发送状态：uptime/freeHeap/rssi/ledStatus等
     lastStatusReport = millis();
   }
   

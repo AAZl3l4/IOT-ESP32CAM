@@ -256,3 +256,59 @@ button:active {
     margin-top: 20px;
 }
 
+/* 摄像头参数按钮样式 */
+.cam-param-btn {
+    background: rgba(100, 100, 100, 0.3);
+    color: #ccc;
+    border: 1px solid rgba(150, 150, 150, 0.3);
+    border-radius: 8px;
+    padding: 10px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cam-param-btn:hover {
+    background: rgba(102, 126, 234, 0.4);
+    border-color: rgba(102, 126, 234, 0.6);
+    color: #fff;
+}
+
+.cam-param-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border-color: #667eea;
+    box-shadow: 0 0 12px rgba(102, 126, 234, 0.5);
+}
+
+/* 摄像头开关按钮样式 */
+.cam-toggle-btn {
+    background: rgba(80, 80, 80, 0.4);
+    color: #888;
+    border: 1px solid rgba(100, 100, 100, 0.4);
+    border-radius: 8px;
+    padding: 10px 8px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cam-toggle-btn:hover {
+    background: rgba(100, 100, 100, 0.5);
+    color: #bbb;
+}
+
+.cam-toggle-btn.on {
+    background: rgba(56, 239, 125, 0.25);
+    color: #38ef7d;
+    border-color: rgba(56, 239, 125, 0.5);
+    box-shadow: 0 0 10px rgba(56, 239, 125, 0.3);
+}
+
+.cam-toggle-btn.on .toggle-icon {
+    color: #38ef7d;
+}
+
+.cam-toggle-btn .toggle-icon {
+    margin-right: 4px;
+}

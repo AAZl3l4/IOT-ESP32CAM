@@ -219,54 +219,154 @@
         </div>
 
 
-        <!-- 摄像头参数 -->
+        <!-- 摄像头参数 - 统一交互式面板 -->
         <div class="section">
             <h2>🎨 摄像头参数调整</h2>
 
-            <div style="margin-bottom: 15px;">
-                <strong>亮度 (Brightness)</strong>
-                <div class="btn-group" style="grid-template-columns: repeat(3, 1fr);">
-                    <button class="btn-info" onclick="quickParam('brightness', -2)">🌑 最暗</button>
-                    <button class="btn-info" onclick="quickParam('brightness', 0)">⚪ 默认</button>
-                    <button class="btn-info" onclick="quickParam('brightness', 2)">☀️ 最亮</button>
+            <!-- 统一配置面板 - 展示+控制合一 -->
+            <div id="cameraConfigPanel"
+                style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 16px; padding: 20px; display: none;">
+
+                <!-- 分辨率选择 -->
+                <div style="margin-bottom: 20px;">
+                    <div style="color: #a0a0a0; font-size: 12px; margin-bottom: 8px;">📐 分辨率 <span id="camFramesize"
+                            style="color: #667eea; font-weight: bold;">--</span></div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 8px;">
+                        <button class="cam-param-btn" data-param="framesize" data-value="5"
+                            onclick="setFramesize(5)">320×240</button>
+                        <button class="cam-param-btn" data-param="framesize" data-value="7"
+                            onclick="setFramesize(7)">480p</button>
+                        <button class="cam-param-btn" data-param="framesize" data-value="10"
+                            onclick="setFramesize(10)">720p HD</button>
+                        <button class="cam-param-btn" data-param="framesize" data-value="13"
+                            onclick="setFramesize(13)">1080p</button>
+                    </div>
+                </div>
+
+                <!-- JPEG质量 -->
+                <div style="margin-bottom: 20px;">
+                    <div style="color: #a0a0a0; font-size: 12px; margin-bottom: 8px;">🎯 质量 <span id="camQuality"
+                            style="color: #11998e; font-weight: bold;">--</span></div>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                        <button class="cam-param-btn cam-quality" data-value="10" onclick="quickParam('quality', 10)">🏆
+                            高质量</button>
+                        <button class="cam-param-btn cam-quality" data-value="20" onclick="quickParam('quality', 20)">⚪
+                            标准</button>
+                        <button class="cam-param-btn cam-quality" data-value="40" onclick="quickParam('quality', 40)">⚡
+                            快速</button>
+                    </div>
+                </div>
+
+                <!-- 亮度 -->
+                <div style="margin-bottom: 20px;">
+                    <div style="color: #a0a0a0; font-size: 12px; margin-bottom: 8px;">☀️ 亮度 <span id="camBrightness"
+                            style="color: #fa709a; font-weight: bold;">--</span></div>
+                    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;">
+                        <button class="cam-param-btn cam-brightness" data-value="-2"
+                            onclick="quickParam('brightness', -2)">-2</button>
+                        <button class="cam-param-btn cam-brightness" data-value="-1"
+                            onclick="quickParam('brightness', -1)">-1</button>
+                        <button class="cam-param-btn cam-brightness" data-value="0"
+                            onclick="quickParam('brightness', 0)">0</button>
+                        <button class="cam-param-btn cam-brightness" data-value="1"
+                            onclick="quickParam('brightness', 1)">+1</button>
+                        <button class="cam-param-btn cam-brightness" data-value="2"
+                            onclick="quickParam('brightness', 2)">+2</button>
+                    </div>
+                </div>
+
+                <!-- 对比度 -->
+                <div style="margin-bottom: 20px;">
+                    <div style="color: #a0a0a0; font-size: 12px; margin-bottom: 8px;">🎚️ 对比度 <span id="camContrast"
+                            style="color: #4facfe; font-weight: bold;">--</span></div>
+                    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;">
+                        <button class="cam-param-btn cam-contrast" data-value="-2"
+                            onclick="quickParam('contrast', -2)">-2</button>
+                        <button class="cam-param-btn cam-contrast" data-value="-1"
+                            onclick="quickParam('contrast', -1)">-1</button>
+                        <button class="cam-param-btn cam-contrast" data-value="0"
+                            onclick="quickParam('contrast', 0)">0</button>
+                        <button class="cam-param-btn cam-contrast" data-value="1"
+                            onclick="quickParam('contrast', 1)">+1</button>
+                        <button class="cam-param-btn cam-contrast" data-value="2"
+                            onclick="quickParam('contrast', 2)">+2</button>
+                    </div>
+                </div>
+
+                <!-- 饱和度 -->
+                <div style="margin-bottom: 20px;">
+                    <div style="color: #a0a0a0; font-size: 12px; margin-bottom: 8px;">🌈 饱和度 <span id="camSaturation"
+                            style="color: #f093fb; font-weight: bold;">--</span></div>
+                    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;">
+                        <button class="cam-param-btn cam-saturation" data-value="-2"
+                            onclick="quickParam('saturation', -2)">-2</button>
+                        <button class="cam-param-btn cam-saturation" data-value="-1"
+                            onclick="quickParam('saturation', -1)">-1</button>
+                        <button class="cam-param-btn cam-saturation" data-value="0"
+                            onclick="quickParam('saturation', 0)">0</button>
+                        <button class="cam-param-btn cam-saturation" data-value="1"
+                            onclick="quickParam('saturation', 1)">+1</button>
+                        <button class="cam-param-btn cam-saturation" data-value="2"
+                            onclick="quickParam('saturation', 2)">+2</button>
+                    </div>
+                </div>
+
+                <!-- 特效 -->
+                <div style="margin-bottom: 20px;">
+                    <div style="color: #a0a0a0; font-size: 12px; margin-bottom: 8px;">✨ 特效 <span id="camSpecialEffect"
+                            style="color: #fee140; font-weight: bold;">--</span></div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 6px;">
+                        <button class="cam-param-btn cam-effect" data-value="0"
+                            onclick="quickParam('special_effect', 0)">无</button>
+                        <button class="cam-param-btn cam-effect" data-value="1"
+                            onclick="quickParam('special_effect', 1)">负片</button>
+                        <button class="cam-param-btn cam-effect" data-value="2"
+                            onclick="quickParam('special_effect', 2)">黑白</button>
+                        <button class="cam-param-btn cam-effect" data-value="3"
+                            onclick="quickParam('special_effect', 3)">复古</button>
+                        <button class="cam-param-btn cam-effect" data-value="4"
+                            onclick="quickParam('special_effect', 4)">蓝调</button>
+                        <button class="cam-param-btn cam-effect" data-value="5"
+                            onclick="quickParam('special_effect', 5)">绿调</button>
+                    </div>
+                </div>
+
+                <!-- 开关类设置 - 可点击切换 -->
+                <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                    <div style="color: #a0a0a0; font-size: 12px; margin-bottom: 10px;">⚙️ 高级设置（点击切换）</div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px;">
+                        <button id="camAwb" class="cam-toggle-btn" onclick="toggleCamParam('awb')">
+                            <span class="toggle-icon">○</span> 白平衡
+                        </button>
+                        <button id="camAec" class="cam-toggle-btn" onclick="toggleCamParam('aec')">
+                            <span class="toggle-icon">○</span> 自动曝光
+                        </button>
+                        <button id="camAgc" class="cam-toggle-btn" onclick="toggleCamParam('agc')">
+                            <span class="toggle-icon">○</span> 自动增益
+                        </button>
+                        <button id="camHmirror" class="cam-toggle-btn" onclick="toggleCamParam('hmirror')">
+                            <span class="toggle-icon">○</span> 水平镜像
+                        </button>
+                        <button id="camVflip" class="cam-toggle-btn" onclick="toggleCamParam('vflip')">
+                            <span class="toggle-icon">○</span> 垂直翻转
+                        </button>
+                        <button id="camBpc" class="cam-toggle-btn" onclick="toggleCamParam('bpc')">
+                            <span class="toggle-icon">○</span> 黑点校正
+                        </button>
+                        <button id="camWpc" class="cam-toggle-btn" onclick="toggleCamParam('wpc')">
+                            <span class="toggle-icon">○</span> 白点校正
+                        </button>
+                        <button id="camLenc" class="cam-toggle-btn" onclick="toggleCamParam('lenc')">
+                            <span class="toggle-icon">○</span> 镜头校正
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <div style="margin-bottom: 15px;">
-                <strong>对比度 (Contrast)</strong>
-                <div class="btn-group" style="grid-template-columns: repeat(3, 1fr);">
-                    <button class="btn-info" onclick="quickParam('contrast', -2)">📉 低</button>
-                    <button class="btn-info" onclick="quickParam('contrast', 0)">⚪ 默认</button>
-                    <button class="btn-info" onclick="quickParam('contrast', 2)">📈 高</button>
-                </div>
-            </div>
-
-            <div style="margin-bottom: 15px;">
-                <strong>饱和度 (Saturation)</strong>
-                <div class="btn-group" style="grid-template-columns: repeat(3, 1fr);">
-                    <button class="btn-info" onclick="quickParam('saturation', -2)">🎨 淡</button>
-                    <button class="btn-info" onclick="quickParam('saturation', 0)">⚪ 默认</button>
-                    <button class="btn-info" onclick="quickParam('saturation', 2)">🌈 鲜艳</button>
-                </div>
-            </div>
-
-            <div style="margin-bottom: 15px;">
-                <strong>特效 (Special Effect)</strong>
-                <div class="btn-group">
-                    <button class="btn-primary" onclick="quickParam('special_effect', 0)">无特效</button>
-                    <button class="btn-primary" onclick="quickParam('special_effect', 1)">负片</button>
-                    <button class="btn-primary" onclick="quickParam('special_effect', 2)">黑白</button>
-                    <button class="btn-primary" onclick="quickParam('special_effect', 3)">复古</button>
-                </div>
-            </div>
-
-            <div>
-                <strong>JPEG质量</strong>
-                <div class="btn-group" style="grid-template-columns: repeat(3, 1fr);">
-                    <button class="btn-success" onclick="quickParam('quality', 10)">🏆 高质量</button>
-                    <button class="btn-success" onclick="quickParam('quality', 20)">⚪ 标准</button>
-                    <button class="btn-success" onclick="quickParam('quality', 40)">⚡ 快速</button>
-                </div>
+            <!-- 加载提示 -->
+            <div id="cameraConfigLoading" style="text-align: center; padding: 40px; color: #999;">
+                <div class="loading"></div>
+                <p style="margin-top: 10px;">等待设备配置...</p>
             </div>
         </div>
 

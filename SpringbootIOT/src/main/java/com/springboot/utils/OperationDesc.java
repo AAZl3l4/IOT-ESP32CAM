@@ -16,17 +16,47 @@ public class OperationDesc {
         OPERATION_MAP.put("led_brightness", "LED亮度调节");
         OPERATION_MAP.put("red_led", "红色指示灯控制");
         
-        // 分辨率
+        // 分辨率和质量
         OPERATION_MAP.put("framesize", "分辨率设置");
+        OPERATION_MAP.put("quality", "JPEG质量设置");
         
-        // 摄像头参数
+        // 图像调整
         OPERATION_MAP.put("brightness", "亮度调整");
         OPERATION_MAP.put("contrast", "对比度调整");
         OPERATION_MAP.put("saturation", "饱和度调整");
-        OPERATION_MAP.put("quality", "JPEG质量设置");
+        OPERATION_MAP.put("sharpness", "锐度调整");
+        OPERATION_MAP.put("denoise", "降噪设置");
         OPERATION_MAP.put("special_effect", "特效设置");
+        
+        // 白平衡相关
+        OPERATION_MAP.put("awb", "白平衡开关");
+        OPERATION_MAP.put("awb_gain", "白平衡增益");
         OPERATION_MAP.put("wb_mode", "白平衡模式");
+        
+        // 曝光控制
+        OPERATION_MAP.put("aec", "自动曝光开关");
+        OPERATION_MAP.put("aec2", "自动曝光2");
         OPERATION_MAP.put("ae_level", "自动曝光级别");
+        OPERATION_MAP.put("aec_value", "曝光值");
+        
+        // 增益控制
+        OPERATION_MAP.put("agc", "自动增益开关");
+        OPERATION_MAP.put("agc_gain", "增益值");
+        OPERATION_MAP.put("gainceiling", "增益上限");
+        
+        // 图像校正
+        OPERATION_MAP.put("bpc", "黑点校正");
+        OPERATION_MAP.put("wpc", "白点校正");
+        OPERATION_MAP.put("raw_gma", "伽马校正");
+        OPERATION_MAP.put("lenc", "镜头校正");
+        
+        // 图像翻转
+        OPERATION_MAP.put("hmirror", "水平镜像");
+        OPERATION_MAP.put("vflip", "垂直翻转");
+        
+        // 其他
+        OPERATION_MAP.put("dcw", "降采样");
+        OPERATION_MAP.put("colorbar", "彩条测试");
         
         // 配置管理
         OPERATION_MAP.put("set_wifi", "WiFi配置");

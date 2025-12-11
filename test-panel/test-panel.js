@@ -9,6 +9,38 @@
 const getBaseUrl = () => document.getElementById('baseUrl').value;
 const getClientId = () => document.getElementById('clientId').value;
 
+/**
+ * 分辨率映射表 - 更通俗易懂的格式
+ */
+const FRAMESIZE_MAP = {
+    0: { name: '96×64', short: 'QQVGA' },
+    3: { name: '240×176', short: 'HQVGA' },
+    5: { name: '320×240', short: 'QVGA' },
+    6: { name: '400×296', short: 'CIF' },
+    7: { name: '480p', short: 'VGA' },
+    8: { name: '800×600', short: 'SVGA' },
+    9: { name: '1024×768', short: 'XGA' },
+    10: { name: '720p HD', short: 'HD' },
+    11: { name: '1280×1024', short: 'SXGA' },
+    12: { name: '1600×1200', short: 'UXGA' },
+    13: { name: '1080p FHD', short: 'FHD' },
+    14: { name: '1080p', short: 'FHD' }
+};
+
+/**
+ * 特效映射表
+ */
+const SPECIAL_EFFECT_MAP = {
+    0: '无特效',
+    1: '负片',
+    2: '黑白',
+    3: '复古',
+    4: '蓝调',
+    5: '绿调',
+    6: '红调'
+};
+
+// 旧版兼容（供updateStatusCard使用）
 const framesizeMap = {
     7: '480p (HVGA)',
     9: 'SVGA',
@@ -263,6 +295,57 @@ async function setStatusInterval() {
     done();
 }
 
+/**
+ * 快捷设置摄像头参数
+ * @param {string} name - 参数名称
+ * @param {number} value - 参数值
+ */
+async function quickParam(name, value) {
+    // 立即更新对应的UI显示
+    updateParamDisplay(name, value);
+
+    // 发送API请求
+    await apiCall(`${getBaseUrl()}/mqtt/param/${getClientId()}`, 'POST', { name, value });
+}
+
+/**
+ * 更新参数显示值
+ */
+function updateParamDisplay(name, value) {
+    switch (name) {
+        case 'brightness':
+            document.getElementById('camBrightness').textContent = value;
+            highlightParamButtons('brightness', value);
+            break;
+        case 'contrast':
+            document.getElementById('camContrast').textContent = value;
+            highlightParamButtons('contrast', value);
+            break;
+        case 'saturation':
+            document.getElementById('camSaturation').textContent = value;
+            highlightParamButtons('saturation', value);
+            break;
+        case 'quality':
+            let label = '标准';
+            if (value <= 10) label = '高质量';
+            else if (value <= 20) label = '标准';
+            else label = '快速';
+            document.getElementById('camQuality').textContent = label;
+            highlightQualityButton(value);
+            break;
+        case 'special_effect':
+            document.getElementById('camSpecialEffect').textContent = SPECIAL_EFFECT_MAP[value] || '无';
+            highlightEffectButton(value);
+            break;
+        case 'framesize':
+            const info = FRAMESIZE_MAP[value] || { name: `${value}` };
+            document.getElementById('camFramesize').textContent = info.name;
+            document.getElementById('statusFramesize').textContent = info.name;
+            highlightParamButton('framesize', value);
+            break;
+    }
+}
+
 // ===========================
 // 配置管理
 // ===========================
@@ -273,7 +356,22 @@ async function setWiFi() {
         alert('❌ 请输入WiFi名称和密码');
         return;
     }
-    if (!confirm('⚠️ 设置WiFi后设备将重启，确认继续？')) return;
+
+    // 强烈警告弹窗
+    const warningMsg = `⚠️ 危险操作警告！
+
+如果WiFi密码不正确，设备将无法连接网络，
+您将无法再通过网络控制该设备！
+
+恢复方法：需要重新烧录固件或物理重置。
+
+请确认WiFi信息正确：
+• WiFi名称: ${ssid}
+• WiFi密码: ${'*'.repeat(password.length)}
+
+确定要继续吗？`;
+
+    if (!confirm(warningMsg)) return;
 
     const btn = event.target;
     const done = showLoading(btn);
@@ -675,10 +773,13 @@ function updateStatusChart(data) {
         if (valueSpan) valueSpan.textContent = data.ledBrightness;
     }
 
-    // 分辨率
+    // 分辨率 - 使用通俗格式
     if (data.framesize !== undefined) {
-        const fsMap = { 0: 'QQVGA', 3: 'HQVGA', 5: 'QVGA', 7: 'VGA', 8: 'SVGA', 9: 'XGA', 10: 'HD', 11: 'SXGA', 13: 'UXGA', 14: 'FHD' };
-        document.getElementById('statusFramesize').textContent = fsMap[data.framesize] || data.framesize;
+        const info = FRAMESIZE_MAP[data.framesize] || { name: `未知(${data.framesize})` };
+        document.getElementById('statusFramesize').textContent = info.name;
+        // 同步更新摄像头配置面板
+        const camEl = document.getElementById('camFramesize');
+        if (camEl) camEl.textContent = info.name;
     }
 
     // LED状态同步
@@ -915,8 +1016,216 @@ function applyConfig(config) {
         }
     }
 
+    // ===== 摄像头配置面板更新 =====
+    applyCameraConfig(config);
+
     console.log('======================================');
 }
+
+/**
+ * 将数值转为直观表示（-2到+2转为更易理解的描述）
+ */
+function formatParamLevel(value, lowLabel = '低', midLabel = '默认', highLabel = '高') {
+    if (value === undefined || value === null) return '--';
+    if (value < -1) return `🔽 ${lowLabel}`;
+    if (value > 1) return `🔼 ${highLabel}`;
+    if (value === 0) return `⚪ ${midLabel}`;
+    return value > 0 ? `+${value}` : `${value}`;
+}
+
+/**
+ * 应用摄像头配置到面板（交互式版本）
+ */
+function applyCameraConfig(config) {
+    // 隐藏加载提示，显示配置面板
+    const loadingEl = document.getElementById('cameraConfigLoading');
+    const panel = document.getElementById('cameraConfigPanel');
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (panel) panel.style.display = 'block';
+
+    // 保存当前配置到全局变量，供切换开关使用
+    window.currentCamConfig = config;
+
+    // 分辨率 - 更新显示并高亮按钮
+    if (config.framesize !== undefined) {
+        const info = FRAMESIZE_MAP[config.framesize] || { name: `未知(${config.framesize})` };
+        document.getElementById('camFramesize').textContent = info.name;
+        document.getElementById('statusFramesize').textContent = info.name;
+        highlightParamButton('framesize', config.framesize);
+    }
+
+    // 质量
+    if (config.quality !== undefined) {
+        let label = '标准';
+        if (config.quality <= 10) label = '高质量';
+        else if (config.quality <= 20) label = '标准';
+        else label = '快速';
+        document.getElementById('camQuality').textContent = label;
+        highlightQualityButton(config.quality);
+    }
+
+    // 亮度
+    if (config.brightness !== undefined) {
+        document.getElementById('camBrightness').textContent = config.brightness;
+        highlightParamButtons('brightness', config.brightness);
+    }
+
+    // 对比度
+    if (config.contrast !== undefined) {
+        document.getElementById('camContrast').textContent = config.contrast;
+        highlightParamButtons('contrast', config.contrast);
+    }
+
+    // 饱和度
+    if (config.saturation !== undefined) {
+        document.getElementById('camSaturation').textContent = config.saturation;
+        highlightParamButtons('saturation', config.saturation);
+    }
+
+    // 特效
+    if (config.specialEffect !== undefined) {
+        document.getElementById('camSpecialEffect').textContent = SPECIAL_EFFECT_MAP[config.specialEffect] || '无';
+        highlightEffectButton(config.specialEffect);
+    }
+
+    // 开关类参数
+    updateToggleButton('camAwb', config.whiteBalance);
+    updateToggleButton('camAec', config.aec);
+    updateToggleButton('camAgc', config.gainCtrl);
+    updateToggleButton('camHmirror', config.hmirror);
+    updateToggleButton('camVflip', config.vflip);
+    updateToggleButton('camBpc', config.bpc);
+    updateToggleButton('camWpc', config.wpc);
+    updateToggleButton('camLenc', config.lenc);
+}
+
+/**
+ * 高亮分辨率按钮
+ */
+function highlightParamButton(param, value) {
+    document.querySelectorAll(`.cam-param-btn[data-param="${param}"]`).forEach(btn => {
+        if (parseInt(btn.dataset.value) === value) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+}
+
+/**
+ * 高亮亮度/对比度/饱和度按钮
+ */
+function highlightParamButtons(paramClass, value) {
+    document.querySelectorAll(`.cam-param-btn.cam-${paramClass}`).forEach(btn => {
+        if (parseInt(btn.dataset.value) === value) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+}
+
+/**
+ * 高亮质量按钮
+ */
+function highlightQualityButton(quality) {
+    document.querySelectorAll('.cam-param-btn.cam-quality').forEach(btn => {
+        if (parseInt(btn.dataset.value) === quality) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+}
+
+/**
+ * 高亮特效按钮
+ */
+function highlightEffectButton(effect) {
+    document.querySelectorAll('.cam-param-btn.cam-effect').forEach(btn => {
+        if (parseInt(btn.dataset.value) === effect) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+}
+
+/**
+ * 更新开关按钮状态
+ */
+function updateToggleButton(elementId, value) {
+    const el = document.getElementById(elementId);
+    if (!el || value === undefined) return;
+
+    const icon = el.querySelector('.toggle-icon');
+    if (value) {
+        el.classList.add('on');
+        if (icon) icon.textContent = '●';
+    } else {
+        el.classList.remove('on');
+        if (icon) icon.textContent = '○';
+    }
+}
+
+/**
+ * 设置分辨率
+ */
+async function setFramesize(value) {
+    await quickParam('framesize', value);
+    // 立即更新显示
+    const info = FRAMESIZE_MAP[value] || { name: `${value}` };
+    document.getElementById('camFramesize').textContent = info.name;
+    document.getElementById('statusFramesize').textContent = info.name;
+    highlightParamButton('framesize', value);
+}
+
+/**
+ * 切换摄像头开关参数
+ */
+async function toggleCamParam(paramName) {
+    const config = window.currentCamConfig || {};
+
+    // 获取当前值并取反
+    let currentValue = 0;
+    switch (paramName) {
+        case 'awb': currentValue = config.whiteBalance || 0; break;
+        case 'aec': currentValue = config.aec || 0; break;
+        case 'agc': currentValue = config.gainCtrl || 0; break;
+        case 'hmirror': currentValue = config.hmirror || 0; break;
+        case 'vflip': currentValue = config.vflip || 0; break;
+        case 'bpc': currentValue = config.bpc || 0; break;
+        case 'wpc': currentValue = config.wpc || 0; break;
+        case 'lenc': currentValue = config.lenc || 0; break;
+    }
+
+    const newValue = currentValue ? 0 : 1;
+
+    // 立即更新UI（乐观更新）
+    const elementMap = {
+        'awb': 'camAwb', 'aec': 'camAec', 'agc': 'camAgc',
+        'hmirror': 'camHmirror', 'vflip': 'camVflip',
+        'bpc': 'camBpc', 'wpc': 'camWpc', 'lenc': 'camLenc'
+    };
+    updateToggleButton(elementMap[paramName], newValue);
+
+    // 更新全局配置
+    switch (paramName) {
+        case 'awb': config.whiteBalance = newValue; break;
+        case 'aec': config.aec = newValue; break;
+        case 'agc': config.gainCtrl = newValue; break;
+        case 'hmirror': config.hmirror = newValue; break;
+        case 'vflip': config.vflip = newValue; break;
+        case 'bpc': config.bpc = newValue; break;
+        case 'wpc': config.wpc = newValue; break;
+        case 'lenc': config.lenc = newValue; break;
+    }
+
+    // 发送命令
+    await quickParam(paramName, newValue);
+}
+
+
 
 // 刷新配置（手动触发）
 function refreshConfig() {

@@ -4,7 +4,7 @@ import com.springboot.configuration.MqttGateway;
 import com.springboot.pojo.DeviceConfig;
 import com.springboot.pojo.DhtData;
 import com.springboot.pojo.ResultDto;
-import com.springboot.service.CamService;
+import com.springboot.service.*;
 import com.springboot.utils.JsonUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,16 +24,16 @@ public class CamServiceImpl implements CamService {
     private MqttGateway mqttGateway;
     
     @Autowired
-    private com.springboot.service.OperationLogService operationLogService;
+    private OperationLogService operationLogService;
     
     @Autowired
-    private com.springboot.service.DhtDataService dhtDataService;
+    private DhtDataService dhtDataService;
     
     @Autowired
-    private com.springboot.service.SseService sseService;
+    private SseService sseService;
     
     @Autowired
-    private com.springboot.service.DeviceStatusHistoryService deviceStatusHistoryService;
+    private DeviceStatusHistoryService deviceStatusHistoryService;
 
     /**
      * 设备状态缓存 - 存储最新的设备状态
@@ -55,7 +55,6 @@ public class CamServiceImpl implements CamService {
         if (topic.endsWith("/result")) {
             ResultDto r = JsonUtil.fromJson(json, ResultDto.class);
             if (r != null) {
-                log.info("【调试】解析结果: id={}, ok={}, info='{}'", r.getId(), r.isOk(), r.getInfo());
                 log.info("指令 {} 执行完成, 结果: ok={}, info={}", 
                          r.getId(), r.isOk(), r.getInfo());
                 // 更新操作日志结果

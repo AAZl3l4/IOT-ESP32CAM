@@ -144,11 +144,14 @@ void uploadImage(camera_fb_t *fb, long cmdId) {
 void setCameraParam(const char* param, int value) {
   sensor_t *s = esp_camera_sensor_get();
   
+  // 分辨率和质量
   if (strcmp(param, "framesize") == 0) {
     s->set_framesize(s, (framesize_t)value);
   } else if (strcmp(param, "quality") == 0) {
     s->set_quality(s, value);
-  } else if (strcmp(param, "brightness") == 0) {
+  } 
+  // 图像调整
+  else if (strcmp(param, "brightness") == 0) {
     s->set_brightness(s, value);
   } else if (strcmp(param, "contrast") == 0) {
     s->set_contrast(s, value);
@@ -160,15 +163,56 @@ void setCameraParam(const char* param, int value) {
     s->set_denoise(s, value);
   } else if (strcmp(param, "special_effect") == 0) {
     s->set_special_effect(s, value);
+  } 
+  // 白平衡
+  else if (strcmp(param, "awb") == 0) {
+    s->set_whitebal(s, value);
+  } else if (strcmp(param, "awb_gain") == 0) {
+    s->set_awb_gain(s, value);
   } else if (strcmp(param, "wb_mode") == 0) {
     s->set_wb_mode(s, value);
+  } 
+  // 曝光控制
+  else if (strcmp(param, "aec") == 0) {
+    s->set_exposure_ctrl(s, value);
+  } else if (strcmp(param, "aec2") == 0) {
+    s->set_aec2(s, value);
   } else if (strcmp(param, "ae_level") == 0) {
     s->set_ae_level(s, value);
   } else if (strcmp(param, "aec_value") == 0) {
     s->set_aec_value(s, value);
+  } 
+  // 增益控制
+  else if (strcmp(param, "agc") == 0) {
+    s->set_gain_ctrl(s, value);
+  } else if (strcmp(param, "agc_gain") == 0) {
+    s->set_agc_gain(s, value);
   } else if (strcmp(param, "gainceiling") == 0) {
     s->set_gainceiling(s, (gainceiling_t)value);
+  } 
+  // 图像校正
+  else if (strcmp(param, "bpc") == 0) {
+    s->set_bpc(s, value);
+  } else if (strcmp(param, "wpc") == 0) {
+    s->set_wpc(s, value);
+  } else if (strcmp(param, "raw_gma") == 0) {
+    s->set_raw_gma(s, value);
+  } else if (strcmp(param, "lenc") == 0) {
+    s->set_lenc(s, value);
+  } 
+  // 图像翻转
+  else if (strcmp(param, "hmirror") == 0) {
+    s->set_hmirror(s, value);
+  } else if (strcmp(param, "vflip") == 0) {
+    s->set_vflip(s, value);
+  } 
+  // DCW (降采样)
+  else if (strcmp(param, "dcw") == 0) {
+    s->set_dcw(s, value);
+  } else if (strcmp(param, "colorbar") == 0) {
+    s->set_colorbar(s, value);
   }
   
   Serial.printf("摄像头参数 %s 设置为 %d\n", param, value);
 }
+
