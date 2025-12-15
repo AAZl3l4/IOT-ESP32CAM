@@ -229,4 +229,19 @@ public class CamController {
         String cmdId = camService.setStatusInterval(clientId, interval);
         return Result.success("状态上报间隔设置指令已发送", cmdId);
     }
+    
+    /**
+     * 控制舵机角度 (窗户控制)
+     */
+    @PostMapping("/servo/{clientId}")
+    public Result<String> setServo(
+            @PathVariable @NotBlank String clientId,
+            @RequestBody @Valid ServoRequest request) {
+        String cmdId = camService.controlServo(clientId, request.getAngle());
+        String status = request.getAngle() == 0 ? "关闭" : 
+                       request.getAngle() == 45 ? "小开" :
+                       request.getAngle() == 90 ? "半开" :
+                       request.getAngle() == 180 ? "全开" : request.getAngle() + "°";
+        return Result.success("窗户控制指令已发送: " + status, cmdId);
+    }
 }

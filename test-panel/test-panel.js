@@ -295,6 +295,31 @@ async function setStatusInterval() {
     done();
 }
 
+// ===========================
+// 窗户控制 (舵机)
+// ===========================
+/**
+ * 设置预设舵机角度
+ * @param {number} angle - 预设角度 (0=关闭, 45=小开, 90=半开, 180=全开)
+ */
+async function setServoPreset(angle) {
+    const btn = event.target;
+    const done = showLoading(btn);
+    await apiCall(`${getBaseUrl()}/mqtt/servo/${getClientId()}`, 'POST', { angle: angle });
+    // 更新滑块显示
+    document.getElementById('servoAngle').value = angle;
+    document.getElementById('servoAngleValue').textContent = angle + '°';
+    done();
+}
+
+/**
+ * 设置舵机角度 (滑块滑动停止后触发)
+ * @param {number} angle - 角度值 (0-180)
+ */
+async function setServoAngle(angle) {
+    await apiCall(`${getBaseUrl()}/mqtt/servo/${getClientId()}`, 'POST', { angle: parseInt(angle) });
+}
+
 /**
  * 快捷设置摄像头参数
  * @param {string} name - 参数名称
@@ -790,6 +815,14 @@ function updateStatusChart(data) {
     if (data.redLedStatus !== undefined) {
         currentRedLedStatus = data.redLedStatus;
         updateRedLedButtonUI();
+    }
+
+    // 舵机角度实时回显到滑块
+    if (data.servoAngle !== undefined) {
+        const slider = document.getElementById('servoAngle');
+        const valueSpan = document.getElementById('servoAngleValue');
+        if (slider) slider.value = data.servoAngle;
+        if (valueSpan) valueSpan.textContent = data.servoAngle + '°';
     }
 }
 

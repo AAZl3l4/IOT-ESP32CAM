@@ -114,4 +114,12 @@ public interface CamService {
      * @return 命令序号
      */
     String setStatusInterval(String clientId, int interval);
+    
+    /**
+     * 控制舵机角度 (窗户控制)
+     * @param clientId ESP 的 clientId
+     * @param angle 角度(0-180), 0=关闭, 45=小开, 90=半开, 180=全开
+     * @return 命令序号
+     */
+    String controlServo(String clientId, int angle);
 }

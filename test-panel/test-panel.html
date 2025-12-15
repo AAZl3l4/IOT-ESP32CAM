@@ -124,6 +124,24 @@
             </div>
         </div>
 
+        <!-- 窗户控制 (舵机) -->
+        <div class="section">
+            <h2>🪟 窗户控制 (舵机)</h2>
+            <div class="btn-group" style="grid-template-columns: repeat(4, 1fr);">
+                <button class="btn-success" onclick="setServoPreset(180)">🌬️ 全开</button>
+                <button class="btn-info" onclick="setServoPreset(90)">半开</button>
+                <button class="btn-warning" onclick="setServoPreset(45)">小开</button>
+                <button class="btn-danger" onclick="setServoPreset(0)">❌ 关闭</button>
+            </div>
+            <div class="input-group" style="margin-top: 15px;">
+                <label>自定义角度 (0-180°)</label>
+                <input type="range" id="servoAngle" min="0" max="180" value="0"
+                    oninput="document.getElementById('servoAngleValue').textContent=this.value + '°'"
+                    onchange="setServoAngle(this.value)">
+                <span id="servoAngleValue" style="font-weight: bold; color: #667eea;">0°</span>
+            </div>
+        </div>
+
         <!-- 设备状态 -->
         <div class="section">
             <h2>📊 设备状态 <span id="statusLoading" class="loading" style="display: none;"></span></h2>

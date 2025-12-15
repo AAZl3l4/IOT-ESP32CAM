@@ -50,6 +50,13 @@
 #define DHT_PIN 13
 #define DHT_TYPE DHT22
 
+// SG90舵机 (GPIO14) - 用于窗户控制
+#define SERVO_PIN 14
+#define SERVO_PWM_FREQ 50        // 50Hz (20ms周期)
+#define SERVO_PWM_RESOLUTION 12  // 12位分辨率 (0-4095)
+#define SERVO_MIN_PULSE 500      // 0度对应500微秒
+#define SERVO_MAX_PULSE 2500     // 180度对应2500微秒
+
 // ===========================
 // 全局变量声明 (extern)
 // ===========================
@@ -78,6 +85,9 @@ extern unsigned long dhtReadInterval;
 // 状态上报
 extern unsigned long lastStatusReport;
 extern unsigned long statusReportInterval;
+
+// 舵机状态
+extern int servoAngle;
 
 // Preferences对象
 extern Preferences preferences;
@@ -113,6 +123,11 @@ void controlRedLED(int value);
 
 // dht_sensor.cpp - DHT传感器
 void readAndPublishDHT();
+
+// servo_control.cpp - 舵机控制
+void initServo();
+void setServoAngle(int angle);
+const char* getWindowStatus(int angle);
 
 // status_publisher.cpp - 状态发布
 void publishResult(long cmdId, bool ok, const char* info);

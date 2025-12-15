@@ -48,6 +48,7 @@ void publishStatus() {
   doc["ledStatus"] = ledStatus;
   doc["ledBrightness"] = ledBrightness;  // LED亮度实时回显
   doc["redLedStatus"] = redLedStatus;
+  doc["servoAngle"] = servoAngle;  // 舵机角度实时回显
   
   sensor_t *s = esp_camera_sensor_get();
   doc["framesize"] = s->status.framesize;

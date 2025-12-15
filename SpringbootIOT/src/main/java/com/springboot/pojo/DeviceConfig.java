@@ -183,6 +183,11 @@ public class DeviceConfig {
     private Boolean redLedStatus;
     
     /**
+     * 舵机角度(0-180), 用于窗户控制
+     */
+    private Integer servoAngle;
+    
+    /**
      * DHT读取间隔(毫秒)
      */
     private Integer dhtInterval;

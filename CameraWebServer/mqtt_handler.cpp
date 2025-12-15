@@ -202,6 +202,25 @@ void handleCommand(StaticJsonDocument<512>& doc) {
   } else if (strcmp(op, "framesize") == 0) {
     setCameraParam("framesize", val);
     publishResult(cmdId, true, "分辨率已更新");
+  } 
+  // ===== 舵机控制指令 (窗户) =====
+  else if (strcmp(op, "servo") == 0) {
+    setServoAngle(val);
+    char info[48];
+    snprintf(info, sizeof(info), "窗户%s (角度:%d°)", getWindowStatus(val), val);
+    publishResult(cmdId, true, info);
+  } else if (strcmp(op, "servo_full") == 0) {
+    setServoAngle(180);
+    publishResult(cmdId, true, "窗户全开 (180°)");
+  } else if (strcmp(op, "servo_half") == 0) {
+    setServoAngle(90);
+    publishResult(cmdId, true, "窗户半开 (90°)");
+  } else if (strcmp(op, "servo_small") == 0) {
+    setServoAngle(45);
+    publishResult(cmdId, true, "窗户小开 (45°)");
+  } else if (strcmp(op, "servo_close") == 0) {
+    setServoAngle(0);
+    publishResult(cmdId, true, "窗户关闭 (0°)");
   } else {
     setCameraParam(op, val);
     char info[64];

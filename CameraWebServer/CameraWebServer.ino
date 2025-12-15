@@ -135,6 +135,10 @@ void setup() {
   // 初始化DHT22传感器
   dht.begin();
   Serial.println("DHT22温湿度传感器初始化完成");
+  
+  // 初始化舵机 (窗户控制)
+  initServo();
+  Serial.println("舵机初始化完成 (窗户控制)");
 
   // ===========================
   // 连接WiFi

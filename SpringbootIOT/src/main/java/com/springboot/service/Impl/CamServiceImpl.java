@@ -369,4 +369,22 @@ public class CamServiceImpl implements CamService {
         operationLogService.log(clientId, "set_status_interval", id, interval);
         return "cmd queued " + id;
     }
+    
+    /**
+     * 控制舵机角度 (窗户控制)
+     */
+    @Override
+    public String controlServo(String clientId, int angle) {
+        // 限制范围 0-180 度
+        if (angle < 0) angle = 0;
+        if (angle > 180) angle = 180;
+        
+        long id = generateCmdId();
+        String json = JsonUtil.toJson(Map.of("id", id, "op", "servo", "val", angle));
+        mqttGateway.send("cam/" + clientId + "/cmd", json);
+        log.info("发送舵机控制指令: clientId={}, cmdId={}, angle={}°", clientId, id, angle);
+        // 记录操作日志
+        operationLogService.log(clientId, "servo", id, angle);
+        return "cmd queued " + id;
+    }
 }

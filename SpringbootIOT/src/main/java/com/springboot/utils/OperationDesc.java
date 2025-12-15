@@ -66,6 +66,13 @@ public class OperationDesc {
         OPERATION_MAP.put("get_config", "查询配置");
         OPERATION_MAP.put("set_dht_interval", "DHT读取间隔设置");
         OPERATION_MAP.put("set_status_interval", "状态上报间隔设置");
+        
+        // 舵机控制 (窗户)
+        OPERATION_MAP.put("servo", "窗户控制");
+        OPERATION_MAP.put("servo_full", "窗户全开");
+        OPERATION_MAP.put("servo_half", "窗户半开");
+        OPERATION_MAP.put("servo_small", "窗户小开");
+        OPERATION_MAP.put("servo_close", "窗户关闭");
     }
     
     /**
@@ -98,6 +105,8 @@ public class OperationDesc {
                 return getFramesizeDesc(value);
             case "special_effect":
                 return getEffectDesc(value);
+            case "servo":
+                return getServoDesc(value);
             default:
                 return String.format("%s(值:%d)", baseDesc, value);
         }
@@ -126,5 +135,16 @@ public class OperationDesc {
             case 3: return "特效:复古";
             default: return "特效:" + effect;
         }
+    }
+    
+    /**
+     * 舵机角度描述 (窗户)
+     */
+    private static String getServoDesc(int angle) {
+        if (angle == 0) return "窗户关闭 (0°)";
+        if (angle == 45) return "窗户小开 (45°)";
+        if (angle == 90) return "窗户半开 (90°)";
+        if (angle == 180) return "窗户全开 (180°)";
+        return String.format("窗户设为%d°", angle);
     }
 }
