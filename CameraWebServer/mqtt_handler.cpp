@@ -221,6 +221,18 @@ void handleCommand(StaticJsonDocument<512>& doc) {
   } else if (strcmp(op, "servo_close") == 0) {
     setServoAngle(0);
     publishResult(cmdId, true, "窗户关闭 (0°)");
+  } 
+  // ===== 继电器控制指令 (风扇) =====
+  else if (strcmp(op, "relay") == 0 || strcmp(op, "fan") == 0) {
+    bool on = (val != 0);
+    controlRelay(on);
+    publishResult(cmdId, true, on ? "风扇开启" : "风扇关闭");
+  } else if (strcmp(op, "fan_on") == 0) {
+    controlRelay(true);
+    publishResult(cmdId, true, "风扇开启");
+  } else if (strcmp(op, "fan_off") == 0) {
+    controlRelay(false);
+    publishResult(cmdId, true, "风扇关闭");
   } else {
     setCameraParam(op, val);
     char info[64];

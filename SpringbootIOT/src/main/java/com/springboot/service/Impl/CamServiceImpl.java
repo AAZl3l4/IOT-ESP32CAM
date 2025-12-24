@@ -91,11 +91,14 @@ public class CamServiceImpl implements CamService {
             try {
                 DhtData dhtData = JsonUtil.fromJson(json, DhtData.class);
                 if (dhtData != null && dhtData.getClientId() != null) {
-                    dhtDataService.save(dhtData.getClientId(), dhtData.getTemperature(), dhtData.getHumidity());
+                    dhtDataService.save(dhtData.getClientId(), dhtData.getTemperature(), 
+                            dhtData.getHumidity(), dhtData.getLightDark());
                     // SSE实时推送到前端
-                    sseService.pushDhtData(dhtData.getClientId(), dhtData.getTemperature(), dhtData.getHumidity());
-                    log.info("温湿度数据: clientId={}, 温度={}℃, 湿度={}%", 
-                             dhtData.getClientId(), dhtData.getTemperature(), dhtData.getHumidity());
+                    sseService.pushDhtData(dhtData.getClientId(), dhtData.getTemperature(), 
+                            dhtData.getHumidity(), dhtData.getLightDark());
+                    log.info("温湿度: clientId={}, 温度={}℃, 湿度={}%, 光照:{}", 
+                             dhtData.getClientId(), dhtData.getTemperature(), dhtData.getHumidity(),
+                             dhtData.getLightDark() != null ? (dhtData.getLightDark() ? "暗" : "亮") : "无");
                 }
             } catch (Exception e) {
                 log.error("解析DHT数据失败: {}", e.getMessage());
@@ -385,6 +388,21 @@ public class CamServiceImpl implements CamService {
         log.info("发送舵机控制指令: clientId={}, cmdId={}, angle={}°", clientId, id, angle);
         // 记录操作日志
         operationLogService.log(clientId, "servo", id, angle);
+        return "cmd queued " + id;
+    }
+    
+    /**
+     * 控制继电器 (风扇控制)
+     */
+    @Override
+    public String controlRelay(String clientId, boolean on) {
+        long id = generateCmdId();
+        String op = on ? "fan_on" : "fan_off";
+        String json = JsonUtil.toJson(Map.of("id", id, "op", op));
+        mqttGateway.send("cam/" + clientId + "/cmd", json);
+        log.info("发送继电器控制指令: clientId={}, cmdId={}, 状态={}", clientId, id, on ? "开启" : "关闭");
+        // 记录操作日志
+        operationLogService.log(clientId, op, id, on ? 1 : 0);
         return "cmd queued " + id;
     }
 }

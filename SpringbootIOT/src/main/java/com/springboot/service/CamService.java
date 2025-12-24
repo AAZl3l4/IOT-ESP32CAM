@@ -122,4 +122,12 @@ public interface CamService {
      * @return 命令序号
      */
     String controlServo(String clientId, int angle);
+    
+    /**
+     * 控制继电器 (风扇控制)
+     * @param clientId ESP 的 clientId
+     * @param on true=开启, false=关闭
+     * @return 命令序号
+     */
+    String controlRelay(String clientId, boolean on);
 }

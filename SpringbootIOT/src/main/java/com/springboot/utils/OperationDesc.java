@@ -73,6 +73,12 @@ public class OperationDesc {
         OPERATION_MAP.put("servo_half", "窗户半开");
         OPERATION_MAP.put("servo_small", "窗户小开");
         OPERATION_MAP.put("servo_close", "窗户关闭");
+        
+        // 继电器控制 (风扇)
+        OPERATION_MAP.put("relay", "风扇控制");
+        OPERATION_MAP.put("fan", "风扇控制");
+        OPERATION_MAP.put("fan_on", "风扇开启");
+        OPERATION_MAP.put("fan_off", "风扇关闭");
     }
     
     /**

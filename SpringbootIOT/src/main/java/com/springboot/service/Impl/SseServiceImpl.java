@@ -44,12 +44,13 @@ public class SseServiceImpl implements SseService {
     }
     
     @Override
-    public void pushDhtData(String clientId, double temperature, double humidity) {
-        // 创建DhtData对象用于推送（不保存到数据库）
+    public void pushDhtData(String clientId, double temperature, double humidity, Boolean lightDark) {
+        // 创建DhtData对象用于推送
         DhtDataPush data = new DhtDataPush();
         data.setClientId(clientId);
         data.setTemperature(temperature);
         data.setHumidity(humidity);
+        data.setLightDark(lightDark);
         data.setTime(LocalDateTime.now().format(timeFormatter));
         
         broadcastAsync("dht", data);
@@ -116,6 +117,7 @@ public class SseServiceImpl implements SseService {
         private String clientId;
         private Double temperature;
         private Double humidity;
+        private Boolean lightDark;    // 是否暗
         private String time; // HH:mm:ss格式
     }
     

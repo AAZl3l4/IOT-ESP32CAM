@@ -320,6 +320,38 @@ async function setServoAngle(angle) {
     await apiCall(`${getBaseUrl()}/mqtt/servo/${getClientId()}`, 'POST', { angle: parseInt(angle) });
 }
 
+// ===========================
+// 风扇控制 (继电器)
+// ===========================
+let fanStatus = false;
+
+/**
+ * 切换风扇开关
+ */
+async function toggleFan() {
+    const btn = document.getElementById('fanToggleBtn');
+    const done = showLoading(btn);
+    fanStatus = !fanStatus;
+    await apiCall(`${getBaseUrl()}/mqtt/relay/${getClientId()}`, 'POST', { on: fanStatus });
+    updateFanUI(fanStatus);
+    done();
+}
+
+/**
+ * 更新风扇UI状态
+ */
+function updateFanUI(on) {
+    const btn = document.getElementById('fanToggleBtn');
+    const icon = document.getElementById('fanIcon');
+    if (on) {
+        btn.className = 'btn-toggle-on';
+        icon.textContent = '🌀';
+    } else {
+        btn.className = 'btn-toggle-off';
+        icon.textContent = '💨';
+    }
+}
+
 /**
  * 快捷设置摄像头参数
  * @param {string} name - 参数名称
@@ -824,6 +856,12 @@ function updateStatusChart(data) {
         if (slider) slider.value = data.servoAngle;
         if (valueSpan) valueSpan.textContent = data.servoAngle + '°';
     }
+
+    // 继电器(风扇)状态实时同步
+    if (data.relayStatus !== undefined) {
+        fanStatus = data.relayStatus;
+        updateFanUI(fanStatus);
+    }
 }
 
 async function loadDhtData() {
@@ -1047,6 +1085,13 @@ function applyConfig(config) {
             select.value = config.statusInterval;
             console.log('✅ 状态上报间隔:', config.statusInterval, 'ms');
         }
+    }
+
+    // 继电器(风扇)状态回显
+    if (config.relayStatus !== undefined) {
+        fanStatus = config.relayStatus;
+        updateFanUI(fanStatus);
+        console.log('✅ 风扇状态:', fanStatus ? '开启' : '关闭');
     }
 
     // ===== 摄像头配置面板更新 =====
@@ -1302,16 +1347,32 @@ function connectSSE() {
         console.log('SSE连接成功:', event.data);
         document.getElementById('sseStatus').innerHTML = '🟢 在线';
         document.getElementById('sseStatus').style.color = '#4caf50';
+
+        // SSE连接成功后立即请求一次设备配置，确保状态同步
+        refreshConfig();
     });
 
-    // 接收温湿度数据
+    // 接收温湿度和光照数据
     sseConnection.addEventListener('dht', (event) => {
         try {
             const data = JSON.parse(event.data);
-            // 更新当前值显示
+            // 更新温湿度显示
             document.getElementById('currentTemp').textContent = data.temperature.toFixed(2);
             document.getElementById('currentHumidity').textContent = data.humidity.toFixed(2);
             document.getElementById('dhtUpdateTime').textContent = data.time;
+
+            // 更新光照明暗状态
+            if (data.lightDark !== undefined) {
+                const statusEl = document.getElementById('lightStatus');
+                const cardEl = document.getElementById('lightStatusCard');
+                if (data.lightDark) {
+                    statusEl.textContent = '🌙 暗';
+                    cardEl.style.background = 'linear-gradient(135deg, #2d3436, #636e72)';
+                } else {
+                    statusEl.textContent = '☀️ 亮';
+                    cardEl.style.background = 'linear-gradient(135deg, #f6d365, #fda085)';
+                }
+            }
 
             // 更新图表（追加新数据点）
             if (dhtChart) {

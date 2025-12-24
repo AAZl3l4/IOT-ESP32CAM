@@ -18,7 +18,7 @@ unsigned long lastDhtReadTime = 0;
 unsigned long dhtReadInterval = 5000;  // DHT读取间隔(毫秒)，默认5秒
 
 /**
- * 读取DHT22并发布温湿度数据
+ * 读取DHT22并发布温湿度和光照数据
  */
 void readAndPublishDHT() {
   float humidity = dht.readHumidity();
@@ -30,11 +30,15 @@ void readAndPublishDHT() {
     return;
   }
   
-  // 构建JSON数据
+  // 读取光敏传感器
+  readLightSensor();
+  
+  // 构建JSON数据 (温湿度+光照明暗)
   StaticJsonDocument<128> doc;
   doc["clientId"] = mqtt_client_id;
   doc["temperature"] = temperature;
   doc["humidity"] = humidity;
+  doc["lightDark"] = lightDigitalValue;  // true=暗, false=亮
   
   char buffer[128];
   serializeJson(doc, buffer);
@@ -44,5 +48,5 @@ void readAndPublishDHT() {
   snprintf(topic, sizeof(topic), "cam/%s/dht", mqtt_client_id.c_str());
   
   mqttClient.publish(topic, buffer, 0);
-  Serial.printf("温湿度: %.1f℃, %.1f%%\n", temperature, humidity);
+  Serial.printf("温湿度: %.1f℃ %.1f%%, 光照:%s\n", temperature, humidity, lightDigitalValue ? "暗" : "亮");
 }

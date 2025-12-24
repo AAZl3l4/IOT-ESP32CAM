@@ -49,6 +49,7 @@ void publishStatus() {
   doc["ledBrightness"] = ledBrightness;  // LED亮度实时回显
   doc["redLedStatus"] = redLedStatus;
   doc["servoAngle"] = servoAngle;  // 舵机角度实时回显
+  doc["relayStatus"] = relayStatus;  // 继电器(风扇)状态
   
   sensor_t *s = esp_camera_sensor_get();
   doc["framesize"] = s->status.framesize;
@@ -97,6 +98,10 @@ void publishConfig(long cmdId) {
   
   // 上传URL
   doc["uploadUrl"] = upload_url;
+  
+  // 舵机和继电器状态
+  doc["servoAngle"] = servoAngle;
+  doc["relayStatus"] = relayStatus;
   
   // 摄像头配置
   sensor_t *s = esp_camera_sensor_get();

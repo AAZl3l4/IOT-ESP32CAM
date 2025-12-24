@@ -188,6 +188,11 @@ public class DeviceConfig {
     private Integer servoAngle;
     
     /**
+     * 继电器状态 (true=开, false=关), 用于风扇控制
+     */
+    private Boolean relayStatus;
+    
+    /**
      * DHT读取间隔(毫秒)
      */
     private Integer dhtInterval;

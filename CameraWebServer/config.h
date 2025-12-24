@@ -57,6 +57,13 @@
 #define SERVO_MIN_PULSE 500      // 0度对应500微秒
 #define SERVO_MAX_PULSE 2500     // 180度对应2500微秒
 
+// 光敏电阻传感器 (仅DO)
+#define LIGHT_DO_PIN 2   // 数字输出 (明/暗)
+
+// 继电器 (GPIO12) - 控制风扇
+// 注意：烧录时必须断开GPIO12！
+#define RELAY_PIN 12
+
 // ===========================
 // 全局变量声明 (extern)
 // ===========================
@@ -88,6 +95,12 @@ extern unsigned long statusReportInterval;
 
 // 舵机状态
 extern int servoAngle;
+
+// 光敏传感器状态
+extern bool lightDigitalValue;  // DO数字值 (true=暗, false=亮)
+
+// 继电器状态
+extern bool relayStatus;  // 继电器 (true=开, false=关)
 
 // Preferences对象
 extern Preferences preferences;
@@ -128,6 +141,14 @@ void readAndPublishDHT();
 void initServo();
 void setServoAngle(int angle);
 const char* getWindowStatus(int angle);
+
+// light_sensor.cpp - 光敏传感器 (仅DO)
+void initLightSensor();
+void readLightSensor();
+
+// relay_control.cpp - 继电器控制
+void initRelay();
+void controlRelay(bool on);
 
 // status_publisher.cpp - 状态发布
 void publishResult(long cmdId, bool ok, const char* info);

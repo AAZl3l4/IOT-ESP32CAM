@@ -94,6 +94,16 @@
             </div>
         </div>
 
+        <!-- 光照监控 -->
+        <div class="section">
+            <h2>☀️ 光照监控</h2>
+            <div id="lightStatusCard"
+                style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 30px; border-radius: 12px; text-align: center;">
+                <div style="font-size: 18px; opacity: 0.9;">💡 当前环境</div>
+                <div id="lightStatus" style="font-size: 48px; font-weight: bold; margin: 15px 0;">--</div>
+            </div>
+        </div>
+
         <!-- 摄像头控制 -->
         <div class="section">
             <h2>📷 摄像头控制</h2>
@@ -140,6 +150,15 @@
                     onchange="setServoAngle(this.value)">
                 <span id="servoAngleValue" style="font-weight: bold; color: #667eea;">0°</span>
             </div>
+        </div>
+
+        <!-- 风扇控制 (继电器) -->
+        <div class="section">
+            <h2>🌀 风扇控制</h2>
+            <button id="fanToggleBtn" class="btn-toggle-off" onclick="toggleFan()"
+                style="width: 100%; padding: 20px; font-size: 18px;">
+                <span id="fanIcon">💨</span> 风扇
+            </button>
         </div>
 
         <!-- 设备状态 -->

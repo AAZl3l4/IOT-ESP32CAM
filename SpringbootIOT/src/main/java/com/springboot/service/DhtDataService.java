@@ -11,9 +11,9 @@ import java.util.List;
 public interface DhtDataService {
     
     /**
-     * 保存温湿度数据
+     * 保存温湿度和光照数据
      */
-    void save(String clientId, double temperature, double humidity);
+    void save(String clientId, double temperature, double humidity, Boolean lightDark);
     
     /**
      * 获取最新一条数据

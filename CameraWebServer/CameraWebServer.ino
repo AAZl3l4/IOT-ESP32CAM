@@ -139,6 +139,12 @@ void setup() {
   // 初始化舵机 (窗户控制)
   initServo();
   Serial.println("舵机初始化完成 (窗户控制)");
+  
+  // 初始化光敏传感器
+  initLightSensor();
+  
+  // 初始化继电器 (风扇控制)
+  initRelay();
 
   // ===========================
   // 连接WiFi

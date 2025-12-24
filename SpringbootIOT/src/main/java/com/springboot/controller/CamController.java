@@ -244,4 +244,19 @@ public class CamController {
                        request.getAngle() == 180 ? "全开" : request.getAngle() + "°";
         return Result.success("窗户控制指令已发送: " + status, cmdId);
     }
+    
+    /**
+     * 控制继电器 (风扇控制)
+     */
+    @PostMapping("/relay/{clientId}")
+    public Result<String> setRelay(
+            @PathVariable @NotBlank String clientId,
+            @RequestBody Map<String, Boolean> request) {
+        Boolean on = request.get("on");
+        if (on == null) {
+            return Result.error("参数on不能为空");
+        }
+        String cmdId = camService.controlRelay(clientId, on);
+        return Result.success("风扇" + (on ? "开启" : "关闭") + "指令已发送", cmdId);
+    }
 }

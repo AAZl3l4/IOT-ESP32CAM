@@ -1,6 +1,7 @@
 package com.springboot.pojo;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -31,6 +32,11 @@ public class DhtData {
      * 湿度(%)
      */
     private Double humidity;
+    
+    /**
+     * 环境是否暗 (true=暗, false=亮)
+     */
+    private Boolean lightDark;
     
     /**
      * 采集时间

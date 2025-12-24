@@ -13,9 +13,9 @@ public interface SseService {
     SseEmitter createConnection(String clientId);
     
     /**
-     * 推送温湿度数据
+     * 推送温湿度和光照数据
      */
-    void pushDhtData(String clientId, double temperature, double humidity);
+    void pushDhtData(String clientId, double temperature, double humidity, Boolean lightDark);
     
     /**
      * 推送操作日志

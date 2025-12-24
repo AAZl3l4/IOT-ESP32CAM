@@ -26,15 +26,17 @@ public class DhtDataServiceImpl implements DhtDataService {
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     @Override
-    public void save(String clientId, double temperature, double humidity) {
+    public void save(String clientId, double temperature, double humidity, Boolean lightDark) {
         DhtData data = new DhtData();
         data.setClientId(clientId);
         data.setTemperature(temperature);
         data.setHumidity(humidity);
+        data.setLightDark(lightDark);
         data.setCreateTime(LocalDateTime.now());
 
         dhtDataMapper.insert(data);
-        log.info("保存温湿度数据: clientId={}, 温度={}℃, 湿度={}%", clientId, temperature, humidity);
+        log.info("保存温湿度: clientId={}, 温度={}℃, 湿度={}%, 光照:{}", 
+                 clientId, temperature, humidity, lightDark != null ? (lightDark ? "暗" : "亮") : "无");
     }
 
     @Override
