@@ -929,6 +929,14 @@ function applyConfig(config) {
     console.log('========== 收到设备配置 ==========');
     console.log('完整配置对象:', config);
 
+    // ESP32 IP地址回显
+    if (config.wifiIp) {
+        const ipInput = document.getElementById('esp32Ip');
+        ipInput.value = config.wifiIp;
+        localStorage.setItem('esp32_ip', config.wifiIp);
+        console.log('✅ ESP32 IP地址:', config.wifiIp);
+    }
+
     // DHT读取间隔
     if (config.dhtInterval) {
         const select = document.getElementById('dhtInterval');
