@@ -23,3 +23,31 @@ CREATE TABLE IF NOT EXISTS device_status_history (
     INDEX idx_client_id (client_id),
     INDEX idx_create_time (create_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='设备状态历史表';
+
+-- 自动化配置表
+CREATE TABLE IF NOT EXISTS automation_config (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
+    client_id VARCHAR(64) NOT NULL UNIQUE COMMENT '设备ID',
+    enabled BOOLEAN DEFAULT TRUE COMMENT '自动化总开关',
+    temp_high INT DEFAULT 25 COMMENT '高温阈值(℃)',
+    temp_low INT DEFAULT 17 COMMENT '低温阈值(℃)',
+    humid_high INT DEFAULT 90 COMMENT '高湿阈值(%)',
+    humid_low INT DEFAULT 45 COMMENT '低湿阈值(%)',
+    memory_threshold INT DEFAULT 51200 COMMENT '内存阈值(bytes)',
+    rssi_threshold INT DEFAULT -75 COMMENT '信号阈值(dBm)',
+    manual_pause_ms BIGINT DEFAULT 300000 COMMENT '手动操作后暂停时间(ms)',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_client_id (client_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='自动化配置表';
+
+-- 温湿度和光照数据表
+CREATE TABLE IF NOT EXISTS dht_data (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
+    client_id VARCHAR(64) NOT NULL COMMENT '设备ID',
+    temperature DECIMAL(5,2) NOT NULL COMMENT '温度(℃)',
+    humidity DECIMAL(5,2) NOT NULL COMMENT '湿度(%)',
+    light_dark TINYINT(1) DEFAULT NULL COMMENT '是否暗(1=暗,0=亮)',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '采集时间',
+    INDEX idx_client_id (client_id),
+    INDEX idx_create_time (create_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='DHT22温湿度和光照数据表';

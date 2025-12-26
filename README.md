@@ -64,6 +64,51 @@
 
 ---
 
+### � 风扇控制 (继电器)
+
+| 功能 | 说明 | API |
+|------|------|-----|
+| **开启** | 继电器吸合，风扇转动 | `POST /mqtt/relay/{clientId}` body: `{"on": true}` |
+| **关闭** | 继电器释放，风扇停止 | `POST /mqtt/relay/{clientId}` body: `{"on": false}` |
+
+> 硬件接线: 继电器IN接GPIO12（烧录时断开！），COM接5V，NO接风扇红线
+
+---
+
+### ☀️ 光照监控 (光敏电阻)
+
+| 功能 | 说明 | 数据 |
+|------|------|------|
+| **明暗检测** | 读取DO数字输出判断环境亮度 | lightDark: true=暗, false=亮 |
+| **实时推送** | 随温湿度一起通过SSE推送 | dht事件中包含lightDark |
+
+> 硬件接线: DO接GPIO2，VCC接3.3V，GND接GND（可通过模块电位器调节灵敏度）
+
+---
+
+### 🎙️ 语音控制 (ASR PRO)
+
+| 语音指令 | 功能 | 串口输出 |
+|----------|------|----------|
+| "小管家" | 唤醒词 | - |
+| "开灯" | LED开 | `CMD:LED_ON` |
+| "关灯" | LED关 | `CMD:LED_OFF` |
+| "灯光最亮" | LED亮度255 | `CMD:LED_MAX` |
+| "灯光中等" | LED亮度128 | `CMD:LED_MID` |
+| "开指示灯" | 红灯开 | `CMD:RLED_ON` |
+| "关指示灯" | 红灯关 | `CMD:RLED_OFF` |
+| "开窗" | 舵机180° | `CMD:WIN_OPEN` |
+| "关窗" | 舵机0° | `CMD:WIN_CLOSE` |
+| "打开风扇" | 继电器开 | `CMD:FAN_ON` |
+| "关闭风扇" | 继电器关 | `CMD:FAN_OFF` |
+| "拍照" | 1080p拍照 | `CMD:CAPTURE` |
+
+> **硬件接线**: ASR PRO TX(PA_2) → GPIO15(RX), ASR PRO RX(PA_3) ← GPIO3(TX), 波特率115200  
+> ⚠️ GPIO3与USB复用，烧录后需断开USB；GPIO16与PSRAM冲突不可用  
+> 语音控制操作会通过MQTT推送到后端，记录操作日志并通过SSE实时推送到前端
+
+---
+
 ### 🌡️ 温湿度监测 (DHT22)
 
 | 功能 | 说明 | API/方式 |
@@ -92,6 +137,8 @@
   "ledStatus": false,
   "ledBrightness": 128,
   "redLedStatus": false,
+  "servoAngle": 90,
+  "relayStatus": false,
   "framesize": 11
 }
 ```
@@ -161,11 +208,16 @@ IOT/
 │   ├── mqtt_handler.cpp          # MQTT连接和消息处理
 │   ├── camera_control.cpp        # 摄像头拍照和参数调整
 │   ├── led_control.cpp           # LED和指示灯控制
-│   ├── dht_sensor.cpp            # DHT22温湿度传感器
+│   ├── dht_sensor.cpp           # DHT22温湿度传感器
+│   ├── servo_control.cpp        # SG90舵机控制 (窗户)
+│   ├── relay_control.cpp        # 继电器控制 (风扇)
+│   ├── light_sensor.cpp         # 光敏电阻传感器
 │   ├── status_publisher.cpp      # 状态发布
+│   ├── asr_handler.cpp           # ASR PRO语音模块串口通信
 │   ├── app_httpd.cpp             # MJPEG视频流服务器
 │   └── board_config.h            # 开发板型号配置
 │
+├── IOT.hd                        # ASR PRO语音模块代码 (天问Block)
 ├── SpringbootIOT/                # Spring Boot后端
 │   ├── src/main/java/com/springboot/
 │   │   ├── controller/           # REST API控制器
@@ -201,6 +253,9 @@ IOT/
 - **ESP32-CAM AI-Thinker** - 双核240MHz, 4MB PSRAM
 - **OV2640摄像头** - 200万像素
 - **DHT22传感器** - 温湿度采集 (GPIO13)
+- **光敏电阻模块** - 环境光照检测 (DO接GPIO2)
+- **SG90舵机** - 窗户控制 (GPIO14)
+- **5V继电器** - 风扇控制 (GPIO12, 烧录时断开)
 - **闪光灯LED** - GPIO4 (PWM控制)
 - **红色指示灯** - GPIO33
 
@@ -266,6 +321,9 @@ cam/{clientId}/config   # ESP32 → 后端 (完整配置)
 | `reset_config` | 恢复默认 | 无 |
 | `set_dht_interval` | DHT采集间隔 | 毫秒(1000-60000) |
 | `set_status_interval` | 状态上报间隔 | 毫秒(10000-300000) |
+| `servo` | 舵机角度 | 0-180度 |
+| `fan_on` | 风扇开启 | 无 |
+| `fan_off` | 风扇关闭 | 无 |
 
 ### 结果消息格式
 ```json
@@ -399,11 +457,33 @@ HTTP请求 → CamController → CamService
 
 ## 📝 版本信息
 
-- **版本**: 2.3.0
-- **最后更新**: 2025-12-15
+- **版本**: 2.4.0
+- **最后更新**: 2025-12-25
 - **开发者**: IOT Project Team
 
 ### 更新日志
+
+**v2.5.0** (2025-12-26)
+- 🤖 新增智能自动化控制功能
+- 🌡️ 温度自动化：高温开窗+开风扇，低温关窗+关风扇
+- 💧 湿度自动化：高湿开窗，低湿关窗
+- 💡 光照自动化：暗开灯，亮关灯
+- ⚠️ 设备监控：内存低/信号差自动开红灯警示
+- 📝 自动化操作记录日志，显示为"🤖 自动化: xxx"
+- ⏸️ 手动操作后暂停自动化（可配置暂停时间）
+- 🎛️ 前端新增智能自动化配置面板
+
+**v2.4.1** (2025-12-26)
+- 🎤 修复语音控制操作日志不写入数据库问题
+- 📜 语音控制操作现在正确记录到日志并通过SSE推送到前端
+- 🔧 后端新增 `logVoiceCommand()` 方法处理语音控制日志
+
+**v2.4.0** (2025-12-25)
+- 🌀 新增继电器风扇控制 (GPIO12)
+- ☀️ 新增光敏电阻明暗检测 (DO接GPIO2)
+- 🪧 新增SG90舵机窗户控制 (GPIO14)
+- 📱 前端风扇/窗户/光照状态实时同步
+- 📍 ESP32 IP自动回显到前端
 
 **v2.3.0** (2025-12-15)
 - 📄 重新整理README文档

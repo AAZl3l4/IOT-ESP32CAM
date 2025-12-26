@@ -1491,3 +1491,78 @@ window.addEventListener('beforeunload', () => {
         sseConnection.close();
     }
 });
+
+// ===========================
+// 智能自动化配置
+// ===========================
+
+/**
+ * 加载自动化配置
+ */
+async function loadAutomationConfig() {
+    try {
+        const response = await fetch(`${getBaseUrl()}/automation/config/${getClientId()}`);
+        const result = await response.json();
+        
+        if (result.code === 0 && result.data) {
+            const config = result.data;
+            
+            // 填充表单
+            document.getElementById('autoEnabled').checked = config.enabled;
+            document.getElementById('tempHigh').value = config.tempHigh;
+            document.getElementById('tempLow').value = config.tempLow;
+            document.getElementById('humidHigh').value = config.humidHigh;
+            document.getElementById('humidLow').value = config.humidLow;
+            document.getElementById('memoryThreshold').value = Math.floor(config.memoryThreshold / 1024); // bytes -> KB
+            document.getElementById('rssiThreshold').value = config.rssiThreshold;
+            document.getElementById('manualPauseMs').value = config.manualPauseMs;
+            
+            showResponse({ code: 0, msg: '自动化配置加载成功', data: config });
+        } else {
+            showResponse(result, true);
+        }
+    } catch (error) {
+        showResponse({ error: '加载自动化配置失败: ' + error.message }, true);
+    }
+}
+
+/**
+ * 保存自动化配置
+ */
+async function saveAutomationConfig() {
+    const config = {
+        enabled: document.getElementById('autoEnabled').checked,
+        tempHigh: parseInt(document.getElementById('tempHigh').value),
+        tempLow: parseInt(document.getElementById('tempLow').value),
+        humidHigh: parseInt(document.getElementById('humidHigh').value),
+        humidLow: parseInt(document.getElementById('humidLow').value),
+        memoryThreshold: parseInt(document.getElementById('memoryThreshold').value) * 1024, // KB -> bytes
+        rssiThreshold: parseInt(document.getElementById('rssiThreshold').value),
+        manualPauseMs: parseInt(document.getElementById('manualPauseMs').value)
+    };
+    
+    try {
+        const response = await fetch(`${getBaseUrl()}/automation/config/${getClientId()}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(config)
+        });
+        const result = await response.json();
+        
+        if (result.code === 0) {
+            showResponse({ code: 0, msg: '✅ 自动化配置保存成功', data: config });
+        } else {
+            showResponse(result, true);
+        }
+    } catch (error) {
+        showResponse({ error: '保存自动化配置失败: ' + error.message }, true);
+    }
+}
+
+// 页面加载时自动加载自动化配置
+window.addEventListener('DOMContentLoaded', () => {
+    // 延迟加载，等待其他初始化完成
+    setTimeout(() => {
+        loadAutomationConfig();
+    }, 1500);
+});

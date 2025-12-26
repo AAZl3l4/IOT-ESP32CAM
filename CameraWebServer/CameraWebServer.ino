@@ -145,6 +145,9 @@ void setup() {
   
   // 初始化继电器 (风扇控制)
   initRelay();
+  
+  // 初始化ASR PRO语音模块串口
+  initASR();
 
   // ===========================
   // 连接WiFi
@@ -212,6 +215,9 @@ void loop() {
     readAndPublishDHT();
     lastDhtReadTime = millis();
   }
+  
+  // 处理ASR PRO串口数据
+  processASRSerial();
 
   delay(10);
 }

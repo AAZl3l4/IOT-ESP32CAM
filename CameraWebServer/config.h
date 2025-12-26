@@ -155,4 +155,9 @@ void publishResult(long cmdId, bool ok, const char* info);
 void publishStatus();
 void publishConfig(long cmdId = 0);
 
+// asr_handler.cpp - ASR PRO语音模块
+void initASR();
+void processASRSerial();
+void sendToASR(const char* data);
+
 #endif // CONFIG_H

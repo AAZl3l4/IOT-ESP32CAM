@@ -79,6 +79,12 @@ public class OperationDesc {
         OPERATION_MAP.put("fan", "风扇控制");
         OPERATION_MAP.put("fan_on", "风扇开启");
         OPERATION_MAP.put("fan_off", "风扇关闭");
+        
+        // 语音控制
+        OPERATION_MAP.put("voice_cmd", "语音控制");
+        
+        // 自动化执行
+        OPERATION_MAP.put("auto_cmd", "自动化执行");
     }
     
     /**

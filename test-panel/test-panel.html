@@ -255,6 +255,94 @@
             </div>
         </div>
 
+        <!-- 智能自动化配置 -->
+        <div class="section">
+            <h2>🤖 智能自动化</h2>
+            <div style="margin-bottom: 15px;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="autoEnabled" checked style="width: 20px; height: 20px;">
+                    <span style="font-weight: bold; font-size: 16px;">启用自动化控制</span>
+                </label>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <!-- 温度阈值 -->
+                <div
+                    style="background: linear-gradient(135deg, #ff6b6b, #ee5a24); color: white; padding: 15px; border-radius: 12px;">
+                    <div style="font-size: 14px; margin-bottom: 10px;">🌡️ 温度控制</div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <label style="font-size: 12px;">高温阈值</label>
+                        <input type="number" id="tempHigh" value="25"
+                            style="width: 60px; padding: 5px; border-radius: 4px; border: none;">
+                        <span>℃</span>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 8px;">
+                        <label style="font-size: 12px;">低温阈值</label>
+                        <input type="number" id="tempLow" value="17"
+                            style="width: 60px; padding: 5px; border-radius: 4px; border: none;">
+                        <span>℃</span>
+                    </div>
+                </div>
+
+                <!-- 湿度阈值 -->
+                <div
+                    style="background: linear-gradient(135deg, #74b9ff, #0984e3); color: white; padding: 15px; border-radius: 12px;">
+                    <div style="font-size: 14px; margin-bottom: 10px;">💧 湿度控制</div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <label style="font-size: 12px;">高湿阈值</label>
+                        <input type="number" id="humidHigh" value="90"
+                            style="width: 60px; padding: 5px; border-radius: 4px; border: none;">
+                        <span>%</span>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 8px;">
+                        <label style="font-size: 12px;">低湿阈值</label>
+                        <input type="number" id="humidLow" value="45"
+                            style="width: 60px; padding: 5px; border-radius: 4px; border: none;">
+                        <span>%</span>
+                    </div>
+                </div>
+
+                <!-- 设备状态阈值 -->
+                <div
+                    style="background: linear-gradient(135deg, #a29bfe, #6c5ce7); color: white; padding: 15px; border-radius: 12px;">
+                    <div style="font-size: 14px; margin-bottom: 10px;">⚠️ 设备监控</div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <label style="font-size: 12px;">内存阈值</label>
+                        <input type="number" id="memoryThreshold" value="50"
+                            style="width: 60px; padding: 5px; border-radius: 4px; border: none;">
+                        <span>KB</span>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 8px;">
+                        <label style="font-size: 12px;">信号阈值</label>
+                        <input type="number" id="rssiThreshold" value="-75"
+                            style="width: 60px; padding: 5px; border-radius: 4px; border: none;">
+                        <span>dBm</span>
+                    </div>
+                </div>
+
+                <!-- 手动暂停时间 -->
+                <div
+                    style="background: linear-gradient(135deg, #fdcb6e, #e17055); color: white; padding: 15px; border-radius: 12px;">
+                    <div style="font-size: 14px; margin-bottom: 10px;">⏸️ 手动暂停</div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <label style="font-size: 12px;">暂停时间</label>
+                        <select id="manualPauseMs" style="padding: 5px; border-radius: 4px; border: none;">
+                            <option value="60000">1分钟</option>
+                            <option value="180000">3分钟</option>
+                            <option value="300000" selected>5分钟</option>
+                            <option value="600000">10分钟</option>
+                            <option value="1800000">30分钟</option>
+                        </select>
+                    </div>
+                    <div style="font-size: 11px; margin-top: 8px; opacity: 0.8;">手动操作后暂停自动化</div>
+                </div>
+            </div>
+
+            <div class="btn-group" style="margin-top: 15px;">
+                <button class="btn-primary" onclick="loadAutomationConfig()">🔄 加载配置</button>
+                <button class="btn-success" onclick="saveAutomationConfig()">💾 保存配置</button>
+            </div>
+        </div>
 
         <!-- 摄像头参数 - 统一交互式面板 -->
         <div class="section">

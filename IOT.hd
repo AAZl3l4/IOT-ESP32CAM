@@ -1,0 +1,111 @@
+#include "asr.h"
+extern "C"{ void * __dso_handle = 0 ;}
+#include "setup.h"
+#include "myLib/asr_event.h"
+#include "HardwareSerial.h"
+
+uint32_t snid;
+void ASR_CODE();
+
+//{speak:小伦-高兴(V3),vol:6,speed:10,platform:haohaodada,version:V3}
+//{playid:10001,voice:欢迎使用智能家居语音助手，用小管家唤醒我}
+//{playid:10002,voice:我退下了，用小管家唤醒我}
+
+/*
+ * 语音识别成功回调函数
+ * snid: 识别到的命令ID
+ */
+void ASR_CODE(){
+  switch (snid) {
+    // ===== LED控制 =====
+    case 1:  // 开灯
+      Serial1.print("CMD:LED_ON\n");
+      break;
+    case 2:  // 关灯
+      Serial1.print("CMD:LED_OFF\n");
+      break;
+    case 3:  // 灯光最亮
+      Serial1.print("CMD:LED_MAX\n");
+      break;
+    case 4:  // 灯光中等
+      Serial1.print("CMD:LED_MID\n");
+      break;
+    case 5:  // 开指示灯
+      digitalWrite(PA_4, 0);
+      Serial1.print("CMD:RLED_ON\n");
+      break;
+    case 6:  // 关指示灯
+      digitalWrite(PA_4, 1);
+      Serial1.print("CMD:RLED_OFF\n");
+      break;
+      
+    // ===== 窗户控制 =====
+    case 7:  // 开窗
+      Serial1.print("CMD:WIN_OPEN\n");
+      break;
+    case 8:  // 关窗
+      Serial1.print("CMD:WIN_CLOSE\n");
+      break;
+      
+    // ===== 风扇控制 =====
+    case 9:  // 打开风扇
+      Serial1.print("CMD:FAN_ON\n");
+      break;
+    case 10:  // 关闭风扇
+      Serial1.print("CMD:FAN_OFF\n");
+      break;
+      
+    // ===== 摄像头控制 =====
+    case 11:  // 拍照
+      Serial1.print("CMD:CAPTURE\n");
+      break;
+  }
+}
+
+void hardware_init(){
+  // 需要操作系统启动后初始化的内容
+  vol_set(3);
+  // 音量范围1-7
+  vTaskDelete(NULL);
+}
+
+void setup()
+{
+  // 永远唤醒模式
+  set_wakeup_forever();
+  
+  // ===== 唤醒词 =====
+  //{ID:0,keyword:"唤醒词",ASR:"小管家",ASRTO:"我在，请吩咐"}
+  
+  // ===== LED控制命令 (ID: 1-6) =====
+  //{ID:1,keyword:"命令词",ASR:"开灯",ASRTO:"好的，已开灯"}
+  //{ID:2,keyword:"命令词",ASR:"关灯",ASRTO:"好的，已关灯"}
+  //{ID:3,keyword:"命令词",ASR:"灯光最亮",ASRTO:"好的，已调到最亮"}
+  //{ID:4,keyword:"命令词",ASR:"灯光中等",ASRTO:"好的，已调到中等"}
+  //{ID:5,keyword:"命令词",ASR:"开指示灯",ASRTO:"好的，指示灯已开"}
+  //{ID:6,keyword:"命令词",ASR:"关指示灯",ASRTO:"好的，指示灯已关"}
+  
+  // ===== 窗户控制命令 (ID: 7-8) =====
+  //{ID:7,keyword:"命令词",ASR:"开窗",ASRTO:"好的，窗户已打开"}
+  //{ID:8,keyword:"命令词",ASR:"关窗",ASRTO:"好的，窗户已关闭"}
+  
+  // ===== 风扇控制命令 (ID: 9-10) =====
+  //{ID:9,keyword:"命令词",ASR:"打开风扇",ASRTO:"好的，风扇已开启"}
+  //{ID:10,keyword:"命令词",ASR:"关闭风扇",ASRTO:"好的，风扇已关闭"}
+  
+  // ===== 摄像头控制命令 (ID: 11) =====
+  //{ID:11,keyword:"命令词",ASR:"拍照",ASRTO:"好的，正在拍照"}
+  
+  // 配置PA_4为输出(指示灯)
+  setPinFun(PA_4, FIRST_FUNCTION);
+  pinMode(PA_4, output);
+  
+  // 配置串口1: TX=PA_2, RX=PA_3, 波特率115200
+  setPinFun(PA_2, FORTH_FUNCTION);
+  setPinFun(PA_3, FORTH_FUNCTION);
+  Serial1.begin(115200);
+}
+
+
+
+/** edittype="asr_procode" */

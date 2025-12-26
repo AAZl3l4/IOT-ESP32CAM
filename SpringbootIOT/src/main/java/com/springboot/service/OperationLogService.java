@@ -28,4 +28,20 @@ public interface OperationLogService {
      * 根据设备ID获取日志
      */
     List<OperationLog> getLogsByClientId(String clientId, int limit);
+    
+    /**
+     * 记录语音控制日志（ESP32本地执行，无cmdId）
+     * @param clientId 设备ID
+     * @param info 语音控制描述（如"语音控制: LED开启"）
+     * @param success 是否成功
+     */
+    void logVoiceCommand(String clientId, String info, boolean success);
+    
+    /**
+     * 记录自动化执行日志
+     * @param clientId 设备ID
+     * @param operation 操作类型
+     * @param description 操作描述
+     */
+    void logAutoCommand(String clientId, String operation, String description);
 }

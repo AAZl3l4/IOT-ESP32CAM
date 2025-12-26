@@ -34,6 +34,9 @@ public class CamServiceImpl implements CamService {
     
     @Autowired
     private DeviceStatusHistoryService deviceStatusHistoryService;
+    
+    @Autowired
+    private AutomationConfigService automationConfigService;
 
     /**
      * 设备状态缓存 - 存储最新的设备状态
@@ -57,8 +60,17 @@ public class CamServiceImpl implements CamService {
             if (r != null) {
                 log.info("指令 {} 执行完成, 结果: ok={}, info={}", 
                          r.getId(), r.isOk(), r.getInfo());
-                // 更新操作日志结果
-                operationLogService.updateResult(r.getId(), r.isOk(), r.getInfo());
+                
+                // 语音控制特殊处理: cmdId=0 且 info以"语音控制:"开头
+                if (r.getId() == 0 && r.getInfo() != null && r.getInfo().startsWith("语音控制:")) {
+                    // 从topic提取clientId (格式: cam/{clientId}/result)
+                    String clientId = extractClientId(topic);
+                    // 记录语音控制日志
+                    operationLogService.logVoiceCommand(clientId, r.getInfo(), r.isOk());
+                } else {
+                    // 正常更新已有日志
+                    operationLogService.updateResult(r.getId(), r.isOk(), r.getInfo());
+                }
             } else {
                 log.error("【错误】无法解析ResultDto: {}", json);
             }
@@ -84,6 +96,13 @@ public class CamServiceImpl implements CamService {
                 log.info("设备状态更新: clientId={}, uptime={}s, freeHeap={}, rssi={}", 
                          status.getClientId(), status.getUptime(), 
                          status.getFreeHeap(), status.getRssi());
+                
+                // 自动化检查：内存和信号
+                automationConfigService.checkAndExecuteStatus(
+                    status.getClientId(), 
+                    status.getFreeHeap(), 
+                    status.getRssi()
+                );
             }
         }
         // 处理DHT22温湿度数据上报
@@ -99,6 +118,14 @@ public class CamServiceImpl implements CamService {
                     log.info("温湿度: clientId={}, 温度={}℃, 湿度={}%, 光照:{}", 
                              dhtData.getClientId(), dhtData.getTemperature(), dhtData.getHumidity(),
                              dhtData.getLightDark() != null ? (dhtData.getLightDark() ? "暗" : "亮") : "无");
+                    
+                    // 自动化检查：温度、湿度、光照
+                    automationConfigService.checkAndExecuteDht(
+                        dhtData.getClientId(), 
+                        dhtData.getTemperature(), 
+                        dhtData.getHumidity(), 
+                        dhtData.getLightDark()
+                    );
                 }
             } catch (Exception e) {
                 log.error("解析DHT数据失败: {}", e.getMessage());
@@ -118,6 +145,20 @@ public class CamServiceImpl implements CamService {
                 log.error("解析Config数据失败: {}", e.getMessage());
             }
         }
+    }
+
+    /**
+     * 从MQTT topic中提取clientId
+     * topic格式: cam/{clientId}/result 或 cam/{clientId}/status
+     */
+    private String extractClientId(String topic) {
+        if (topic != null) {
+            String[] parts = topic.split("/");
+            if (parts.length >= 2) {
+                return parts[1];
+            }
+        }
+        return "unknown";
     }
 
     /**
@@ -153,11 +194,13 @@ public class CamServiceImpl implements CamService {
     @Override
     public String controlLed(String clientId, int value) {
         long id = generateCmdId();
-        String json = JsonUtil.toJson(Map.of("id", id, "op", "led", "val", value));
+        String json = JsonUtil.toJson(Map.of("DeviceAutoState id", id, "op", "led", "val", value));
         mqttGateway.send("cam/" + clientId + "/cmd", json);
         log.info("发送LED控制指令: clientId={}, cmdId={}, value={}", clientId, id, value);
         // 记录操作日志
         operationLogService.log(clientId, "led", id, value);
+        // 记录手动操作，暂停自动化
+        automationConfigService.recordManualOperation(clientId);
         return "cmd queued " + id;
     }
 
@@ -189,6 +232,8 @@ public class CamServiceImpl implements CamService {
         log.info("发送红色指示灯指令: clientId={}, cmdId={}, value={}", clientId, id, value);
         // 记录操作日志
         operationLogService.log(clientId, "red_led", id, value);
+        // 记录手动操作，暂停自动化
+        automationConfigService.recordManualOperation(clientId);
         return "cmd queued " + id;
     }
 
@@ -388,6 +433,8 @@ public class CamServiceImpl implements CamService {
         log.info("发送舵机控制指令: clientId={}, cmdId={}, angle={}°", clientId, id, angle);
         // 记录操作日志
         operationLogService.log(clientId, "servo", id, angle);
+        // 记录手动操作，暂停自动化
+        automationConfigService.recordManualOperation(clientId);
         return "cmd queued " + id;
     }
     
@@ -403,6 +450,8 @@ public class CamServiceImpl implements CamService {
         log.info("发送继电器控制指令: clientId={}, cmdId={}, 状态={}", clientId, id, on ? "开启" : "关闭");
         // 记录操作日志
         operationLogService.log(clientId, op, id, on ? 1 : 0);
+        // 记录手动操作，暂停自动化
+        automationConfigService.recordManualOperation(clientId);
         return "cmd queued " + id;
     }
 }

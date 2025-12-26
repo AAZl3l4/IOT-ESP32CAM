@@ -78,4 +78,52 @@ public class OperationLogServiceImpl implements OperationLogService {
         wrapper.last("LIMIT " + limit);
         return operationLogMapper.selectList(wrapper);
     }
+    
+    @Override
+    public void logVoiceCommand(String clientId, String info, boolean success) {
+        // 从info解析操作描述：去掉"语音控制: "前缀，提取操作描述
+        String operationDesc = info;
+        if (info != null && info.startsWith("语音控制:")) {
+            operationDesc = info.substring("语音控制:".length()).trim();
+        } else if (info != null && info.startsWith("语音控制: ")) {
+            operationDesc = info.substring("语音控制: ".length()).trim();
+        }
+        
+        OperationLog operationLog = new OperationLog();
+        operationLog.setClientId(clientId);
+        operationLog.setOperation("voice_cmd");  // 标记为语音控制
+        operationLog.setOperationDesc("🎤 语音: " + operationDesc);
+        operationLog.setCmdId(0L);
+        operationLog.setResult(success ? "success" : "failed");
+        operationLog.setResultMsg(operationDesc);
+        operationLog.setCreateTime(LocalDateTime.now());
+        
+        operationLogMapper.insert(operationLog);
+        log.info("记录语音控制日志: clientId={}, desc={}", clientId, operationDesc);
+        
+        // SSE推送日志
+        sseService.pushOperationLog(clientId, "voice_cmd", 
+                "🎤 语音: " + operationDesc, 
+                success ? "success" : "failed", operationDesc);
+    }
+    
+    @Override
+    public void logAutoCommand(String clientId, String operation, String description) {
+        OperationLog operationLog = new OperationLog();
+        operationLog.setClientId(clientId);
+        operationLog.setOperation("auto_cmd");  // 标记为自动化执行
+        operationLog.setOperationDesc("🤖 自动化: " + description);
+        operationLog.setCmdId(0L);
+        operationLog.setResult("success");
+        operationLog.setResultMsg(description);
+        operationLog.setCreateTime(LocalDateTime.now());
+        
+        operationLogMapper.insert(operationLog);
+        log.info("记录自动化日志: clientId={}, op={}, desc={}", clientId, operation, description);
+        
+        // SSE推送日志
+        sseService.pushOperationLog(clientId, "auto_cmd", 
+                "🤖 自动化: " + description, 
+                "success", description);
+    }
 }
