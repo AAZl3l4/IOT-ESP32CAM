@@ -162,11 +162,161 @@ async function apiCall(url, method = 'POST', body = null) {
 // ===========================
 // 摄像头控制
 // ===========================
+
+// 等待拍照结果的状态
+let pendingCapture = null;
+
+/**
+ * 拍照（异步，结果通过SSE推送）
+ */
 async function capture() {
     const btn = event.target;
     const done = showLoading(btn);
-    await apiCall(`${getBaseUrl()}/mqtt/capture/${getClientId()}`);
-    done();
+
+    try {
+        // 发送拍照指令，立即返回cmdId
+        const response = await fetch(`${getBaseUrl()}/mqtt/capture/${getClientId()}`, {
+            method: 'POST'
+        });
+        const result = await response.json();
+        done();
+
+        if (result.code === 0 && result.data) {
+            // 记录等待状态
+            pendingCapture = { cmdId: result.data, time: Date.now() };
+            showToast('📸 拍照指令已发送，等待上传...');
+        } else {
+            alert('❌ ' + (result.msg || '拍照失败'));
+        }
+    } catch (error) {
+        done();
+        alert('❌ 网络错误: ' + error.message);
+    }
+}
+
+/**
+ * 处理SSE推送的拍照结果
+ */
+function handleCaptureResult(data) {
+    // 只有用户手动拍照（pendingCapture存在）才弹出询问窗口
+    // AI自动拍照时pendingCapture为null，不弹窗
+    if (pendingCapture) {
+        pendingCapture = null;  // 清除等待状态
+        const imageUrl = `${getBaseUrl()}/file/photos/${data.imageFile}`;
+        showCapturePreview(imageUrl, data.imageFile);
+    }
+    // AI自动拍照不弹窗，直接由ai-response事件处理
+}
+
+/**
+ * 处理SSE推送的AI响应
+ */
+function handleAiResponse(data) {
+    // 移除等待提示
+    const messages = document.getElementById('aiMessages');
+    const lastMsg = messages.lastElementChild;
+    if (lastMsg && (lastMsg.textContent.includes('正在分析') || lastMsg.textContent.includes('正在拍照'))) {
+        messages.removeChild(lastMsg);
+    }
+
+    // 如果有图片，显示图片
+    if (data.imageFile) {
+        addAiMessage('image', data.imageFile);
+    }
+
+    // 显示AI响应
+    addAiMessage('assistant', data.response);
+
+    // 滚动到底部
+    document.getElementById('aiChatHistory').scrollTop = document.getElementById('aiChatHistory').scrollHeight;
+}
+
+/**
+ * 显示提示信息
+ */
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 12px 24px; border-radius: 8px; z-index: 10000; font-size: 14px;';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+/**
+ * 显示拍照预览（内嵌在页面中）
+ */
+let currentPreviewImageFile = null;
+
+function showCapturePreview(imageUrl, imageFile) {
+    currentPreviewImageFile = imageFile;
+
+    const container = document.getElementById('capturePreviewContainer');
+    const img = document.getElementById('capturePreviewImg');
+
+    img.src = imageUrl;
+    container.style.display = 'block';
+
+    // 平滑滚动到预览区域
+    container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+/**
+ * 关闭拍照预览
+ */
+function closeCapturePreview() {
+    // 关闭弹窗（兼容旧代码）
+    const overlay = document.getElementById('capturePreviewOverlay');
+    if (overlay) {
+        overlay.remove();
+    }
+
+    // 关闭内嵌预览
+    const container = document.getElementById('capturePreviewContainer');
+    if (container) {
+        container.style.display = 'none';
+    }
+    currentPreviewImageFile = null;
+}
+
+/**
+ * 从预览区点击AI分析
+ */
+function aiAnalyzeCaptureFromPreview() {
+    if (currentPreviewImageFile) {
+        aiAnalyzeCapture(currentPreviewImageFile);
+    }
+}
+
+/**
+ * AI分析拍摄的图片（异步，结果通过SSE推送）
+ */
+async function aiAnalyzeCapture(imageFile) {
+    closeCapturePreview();
+
+
+    // 显示等待提示
+    addAiMessage('system', '🤖 正在分析图片...');
+
+    try {
+        const response = await fetch(`${getBaseUrl()}/ai/analyze`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sessionId: AI_SESSION_ID,
+                imageFile: imageFile,
+                message: '请描述这张图片的内容，包括环境、光线、可见的物体等'
+            })
+        });
+
+        const result = await response.json();
+        console.log('AI分析任务已提交:', result);
+        // 结果将通过SSE推送
+    } catch (error) {
+        addAiMessage('error', '❌ 网络错误: ' + error.message);
+    }
+
+    // 滚动到AI助手区域
+    document.getElementById('aiChatHistory').scrollIntoView({ behavior: 'smooth' });
 }
 
 async function getStatus() {
@@ -496,9 +646,11 @@ function startStream() {
     const streamUrl = `http://${ip}/stream?t=${Date.now()}`;
     const img = document.getElementById('videoStream');
     const container = document.getElementById('streamContainer');
+    const placeholder = document.getElementById('videoPlaceholder');
 
     img.src = streamUrl;
     container.style.display = 'block';
+    placeholder.style.display = 'none';  // 隐藏占位区域
 
     // 保存IP到localStorage
     localStorage.setItem('esp32_ip', ip);
@@ -513,9 +665,11 @@ function startStream() {
 function stopStream() {
     const img = document.getElementById('videoStream');
     const container = document.getElementById('streamContainer');
+    const placeholder = document.getElementById('videoPlaceholder');
 
     img.src = '';
     container.style.display = 'none';
+    placeholder.style.display = 'flex';  // 显示占位区域
 
     showResponse({
         code: 0,
@@ -1434,6 +1588,28 @@ function connectSSE() {
         }
     });
 
+    // 接收拍照结果
+    sseConnection.addEventListener('capture', (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            console.log('收到拍照结果:', data);
+            handleCaptureResult(data);
+        } catch (e) {
+            console.error('解析拍照结果失败:', e);
+        }
+    });
+
+    // 接收AI响应
+    sseConnection.addEventListener('ai-response', (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            console.log('收到AI响应:', data);
+            handleAiResponse(data);
+        } catch (e) {
+            console.error('解析AI响应失败:', e);
+        }
+    });
+
     // 连接错误
     sseConnection.onerror = (error) => {
         console.error('SSE连接错误:', error);
@@ -1503,10 +1679,10 @@ async function loadAutomationConfig() {
     try {
         const response = await fetch(`${getBaseUrl()}/automation/config/${getClientId()}`);
         const result = await response.json();
-        
+
         if (result.code === 0 && result.data) {
             const config = result.data;
-            
+
             // 填充表单
             document.getElementById('autoEnabled').checked = config.enabled;
             document.getElementById('tempHigh').value = config.tempHigh;
@@ -1516,7 +1692,7 @@ async function loadAutomationConfig() {
             document.getElementById('memoryThreshold').value = Math.floor(config.memoryThreshold / 1024); // bytes -> KB
             document.getElementById('rssiThreshold').value = config.rssiThreshold;
             document.getElementById('manualPauseMs').value = config.manualPauseMs;
-            
+
             showResponse({ code: 0, msg: '自动化配置加载成功', data: config });
         } else {
             showResponse(result, true);
@@ -1540,7 +1716,7 @@ async function saveAutomationConfig() {
         rssiThreshold: parseInt(document.getElementById('rssiThreshold').value),
         manualPauseMs: parseInt(document.getElementById('manualPauseMs').value)
     };
-    
+
     try {
         const response = await fetch(`${getBaseUrl()}/automation/config/${getClientId()}`, {
             method: 'POST',
@@ -1548,7 +1724,7 @@ async function saveAutomationConfig() {
             body: JSON.stringify(config)
         });
         const result = await response.json();
-        
+
         if (result.code === 0) {
             showResponse({ code: 0, msg: '✅ 自动化配置保存成功', data: config });
         } else {
@@ -1566,3 +1742,133 @@ window.addEventListener('DOMContentLoaded', () => {
         loadAutomationConfig();
     }, 1500);
 });
+
+// ===========================
+// AI助手对话功能
+// ===========================
+
+const AI_SESSION_ID = 'esp32cam_session_' + Date.now();
+
+/**
+ * 发送AI消息（异步，结果通过SSE推送）
+ */
+async function sendAiMessage() {
+    const input = document.getElementById('aiMessageInput');
+    const message = input.value.trim();
+
+    if (!message) {
+        alert('请输入消息');
+        return;
+    }
+
+    const clientId = getClientId();
+    if (!clientId) {
+        alert('请先填写ClientID');
+        return;
+    }
+
+    // 清空输入框
+    input.value = '';
+
+    // 添加用户消息到界面
+    addAiMessage('user', message);
+
+    // 显示等待提示
+    addAiMessage('system', '📸 正在拍照并分析...');
+
+    // 发送到后端（异步执行，立即返回taskId）
+    try {
+        const response = await fetch(`${getBaseUrl()}/ai/chat/${clientId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sessionId: AI_SESSION_ID,
+                message: message
+            })
+        });
+
+        const result = await response.json();
+        console.log('AI任务已提交:', result);
+
+        if (result.code !== 0) {
+            // 移除等待提示
+            const messages = document.getElementById('aiMessages');
+            const lastMsg = messages.lastElementChild;
+            if (lastMsg && lastMsg.textContent.includes('正在拍照')) {
+                messages.removeChild(lastMsg);
+            }
+            addAiMessage('error', '❌ ' + (result.msg || '请求失败'));
+        }
+        // 结果将通过SSE推送（handleAiResponse处理）
+    } catch (error) {
+        // 移除等待提示
+        const messages = document.getElementById('aiMessages');
+        const lastMsg = messages.lastElementChild;
+        if (lastMsg && lastMsg.textContent.includes('正在拍照')) {
+            messages.removeChild(lastMsg);
+        }
+        addAiMessage('error', '❌ 网络错误: ' + error.message);
+    }
+}
+
+/**
+ * 添加消息到界面
+ */
+function addAiMessage(role, content) {
+    const container = document.getElementById('aiMessages');
+
+    // 移除初始提示
+    const placeholder = container.querySelector('[style*="text-align: center"]');
+    if (placeholder && placeholder.textContent.includes('发送消息开始对话')) {
+        container.removeChild(placeholder);
+    }
+
+    const msgDiv = document.createElement('div');
+
+    if (role === 'user') {
+        msgDiv.style.cssText = 'align-self: flex-end; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 10px 15px; border-radius: 12px 12px 0 12px; max-width: 80%;';
+        msgDiv.innerHTML = `<div style="font-size: 12px; opacity: 0.7; margin-bottom: 5px;">👤 你</div>${content}`;
+    } else if (role === 'image') {
+        // 显示拍摄的图片（通过URL访问）
+        msgDiv.style.cssText = 'align-self: center; padding: 5px; max-width: 90%;';
+        msgDiv.innerHTML = `<div style="font-size: 12px; color: #888; margin-bottom: 5px; text-align: center;">📸 拍摄的图片</div><img src="${getBaseUrl()}/file/photos/${content}" style="max-width: 100%; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">`;
+    } else if (role === 'assistant') {
+        msgDiv.style.cssText = 'align-self: flex-start; background: linear-gradient(135deg, #11998e, #38ef7d); color: white; padding: 10px 15px; border-radius: 12px 12px 12px 0; max-width: 80%;';
+        msgDiv.innerHTML = `<div style="font-size: 12px; opacity: 0.7; margin-bottom: 5px;">🤖 AI助手</div>${content}`;
+    } else if (role === 'system') {
+        msgDiv.style.cssText = 'align-self: center; background: rgba(255,255,255,0.1); color: #aaa; padding: 8px 12px; border-radius: 8px; font-size: 12px;';
+        msgDiv.textContent = content;
+    } else if (role === 'error') {
+        msgDiv.style.cssText = 'align-self: center; background: rgba(255,0,0,0.2); color: #ff6b6b; padding: 8px 12px; border-radius: 8px; font-size: 12px;';
+        msgDiv.textContent = content;
+    }
+
+    container.appendChild(msgDiv);
+
+    // 滚动到底部
+    const history = document.getElementById('aiChatHistory');
+    history.scrollTop = history.scrollHeight;
+}
+
+/**
+ * 清空对话历史
+ */
+async function clearAiHistory() {
+    if (!confirm('确定清空对话历史？')) return;
+
+    try {
+        await fetch(`${getBaseUrl()}/ai/history/${AI_SESSION_ID}`, {
+            method: 'DELETE'
+        });
+    } catch (e) {
+        console.log('清空远程历史失败', e);
+    }
+
+    // 清空界面
+    document.getElementById('aiMessages').innerHTML = `
+        <div style="text-align: center; color: #666; padding: 50px 0;">
+            💭 发送消息开始对话（可附带拍照）
+        </div>
+    `;
+}
+

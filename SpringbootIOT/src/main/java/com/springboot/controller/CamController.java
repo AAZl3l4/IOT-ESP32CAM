@@ -4,10 +4,12 @@ import com.springboot.pojo.Query.*;
 import com.springboot.pojo.vo.DeviceStatusResponse;
 import com.springboot.utils.Result;
 import com.springboot.service.CamService;
+import com.springboot.service.SseService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,6 +34,13 @@ public class CamController {
 
     @Autowired
     private CamService camService;
+    
+    @Autowired
+    private SseService sseService;
+    
+    /** 图片保存目录 */
+    @Value("${photos-dir:photos}")
+    private String photosDir;
 
     /**
      * 触发拍照 (1080p高清)
@@ -181,16 +190,31 @@ public class CamController {
             @RequestParam("file") MultipartFile file,
             @RequestParam("fileName") String fileName) {
         try {
-            // 创建photos目录
-            Path photosDir = Paths.get("photos");
-            Files.createDirectories(photosDir);
+            // 创建图片保存目录
+            Path photosDirPath = Paths.get(photosDir);
+            Files.createDirectories(photosDirPath);
             
             // 保存文件
-            Path filePath = photosDir.resolve(fileName);
+            Path filePath = photosDirPath.resolve(fileName);
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
             
             long fileSize = Files.size(filePath);
             log.info("图片上传成功: {}, 大小: {} bytes", fileName, fileSize);
+            
+            // 从文件名解析clientId和cmdId（格式: clientId_cmdId.jpg）
+            String clientId = "unknown";
+            String cmdId = "0";
+            if (fileName.contains("_") && fileName.contains(".")) {
+                String baseName = fileName.substring(0, fileName.lastIndexOf("."));
+                String[] parts = baseName.split("_");
+                if (parts.length >= 2) {
+                    clientId = parts[0];
+                    cmdId = parts[1];
+                }
+            }
+            
+            // 通过SSE推送拍照结果
+            sseService.pushCaptureResult(clientId, cmdId, fileName);
             
             Map<String, Object> result = new HashMap<>();
             result.put("fileName", fileName);

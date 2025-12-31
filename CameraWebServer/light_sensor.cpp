@@ -26,5 +26,5 @@ void initLightSensor() {
  */
 void readLightSensor() {
   lightDigitalValue = digitalRead(LIGHT_DO_PIN);
-  Serial.printf("光敏传感器: %s\n", lightDigitalValue ? "暗" : "亮");
+  // Serial.printf("光敏传感器: %s\n", lightDigitalValue ? "暗" : "亮");
 }

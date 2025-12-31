@@ -32,4 +32,14 @@ public interface SseService {
      * 推送设备状态（rssi/freeHeap实时数据）
      */
     void pushDeviceStatus(String clientId, Object status);
+    
+    /**
+     * 推送拍照结果
+     */
+    void pushCaptureResult(String clientId, String cmdId, String imageFile);
+    
+    /**
+     * 推送AI响应
+     */
+    void pushAiResponse(String sessionId, String taskId, String response, String imageFile);
 }

@@ -1,5 +1,6 @@
 package com.springboot.controller;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
@@ -15,7 +16,10 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/file")
 public class FileController {
-    private static final String UPLOAD_DIR = "src/main/resources/static/";
+    
+    /** 图片保存目录 */
+    @Value("${photos-dir}")
+    private String photosDir;
 
     @PostMapping("/upload")
     // 保存文件到服务器
@@ -32,11 +36,14 @@ public class FileController {
         String randomFilename = UUID.randomUUID().toString() + fileExtension;
 
         try {
-            File directory = new File(UPLOAD_DIR);
+            File directory = new File(photosDir);
+            if (!directory.exists()) {
+                directory.mkdirs();
+            }
             String paths = directory.getCanonicalPath();
-            File dest = new File(paths+'/' + randomFilename);
+            File dest = new File(paths + '/' + randomFilename);
             file.transferTo(dest);
-            return "http://localhost:8080/file/" + randomFilename;
+            return "http://localhost:8080/file/photos/" + randomFilename;
         } catch (IOException e) {
             e.printStackTrace();
             return "文件保存失败: " + e.getMessage();
@@ -44,9 +51,9 @@ public class FileController {
     }
 
     // 预览文件
-    @GetMapping("/{filename}")
+    @GetMapping("/photos/{filename}")
     public ResponseEntity<Resource> preview(@PathVariable String filename) {
-        File file = new File(UPLOAD_DIR + filename);
+        File file = new File(photosDir + "/" + filename);
         if (!file.exists()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
@@ -63,9 +70,9 @@ public class FileController {
     }
 
     // 下载文件
-    @GetMapping("/download/{filename}")
+    @GetMapping("/photos/download/{filename}")
     public ResponseEntity<Resource> download(@PathVariable String filename) {
-        File file = new File(UPLOAD_DIR + filename);
+        File file = new File(photosDir + "/" + filename);
         if (!file.exists()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
@@ -82,4 +89,3 @@ public class FileController {
     }
 
 }
-

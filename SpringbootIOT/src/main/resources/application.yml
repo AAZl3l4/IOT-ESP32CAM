@@ -19,3 +19,17 @@ mybatis-plus:
 
 mqtt:
   url: tcp://broker.emqx.io:1883
+
+# ModelScope AI 配置
+modelscope:
+  api-key: ms-438e1308-08dd-491e-9932-4f5e528ae8eb
+  model: Qwen/Qwen2.5-VL-32B-Instruct
+  api-url: https://api-inference.modelscope.cn/v1/chat/completions
+
+# 图片保存目录
+photos-dir: src/main/resources/static/photos/
+
+# AI服务配置
+ai:
+  max-wait-seconds: 30
+

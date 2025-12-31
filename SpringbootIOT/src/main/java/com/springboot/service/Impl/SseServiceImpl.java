@@ -111,6 +111,50 @@ public class SseServiceImpl implements SseService {
         }
     }
     
+    @Override
+    public void pushCaptureResult(String clientId, String cmdId, String imageFile) {
+        CaptureResultPush data = new CaptureResultPush();
+        data.setClientId(clientId);
+        data.setCmdId(cmdId);
+        data.setImageFile(imageFile);
+        data.setTime(LocalDateTime.now().format(timeFormatter));
+        
+        broadcastAsync("capture", data);
+        log.info("SSE推送拍照结果: clientId={}, imageFile={}", clientId, imageFile);
+    }
+    
+    @Override
+    public void pushAiResponse(String sessionId, String taskId, String response, String imageFile) {
+        AiResponsePush data = new AiResponsePush();
+        data.setSessionId(sessionId);
+        data.setTaskId(taskId);
+        data.setResponse(response);
+        data.setImageFile(imageFile);
+        data.setTime(LocalDateTime.now().format(timeFormatter));
+        
+        broadcastAsync("ai-response", data);
+        log.info("SSE推送AI响应: sessionId={}, taskId={}", sessionId, taskId);
+    }
+
+    // 内部类：拍照结果推送对象
+    @Data
+    private static class CaptureResultPush {
+        private String clientId;
+        private String cmdId;
+        private String imageFile;
+        private String time;
+    }
+
+    // 内部类：AI响应推送对象
+    @Data
+    private static class AiResponsePush {
+        private String sessionId;
+        private String taskId;
+        private String response;
+        private String imageFile;
+        private String time;
+    }
+
     // 内部类：DHT数据推送对象
     @Data
     private static class DhtDataPush {

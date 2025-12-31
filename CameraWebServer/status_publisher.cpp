@@ -32,7 +32,7 @@ void publishResult(long cmdId, bool ok, const char* info) {
   snprintf(topic, sizeof(topic), "cam/%s/result", mqtt_client_id.c_str());
   
   mqttClient.publish(topic, buffer, 1);
-  Serial.printf("已发布结果: %s\n", buffer);
+  // Serial.printf("已发布结果: %s\n", buffer);
 }
 
 /**
@@ -61,7 +61,7 @@ void publishStatus() {
   snprintf(topic, sizeof(topic), "cam/%s/status", mqtt_client_id.c_str());
   
   mqttClient.publish(topic, buffer, 0);
-  Serial.printf("已发布状态: %s\n", buffer);
+  // Serial.printf("已发布状态: %s\n", buffer);
 }
 
 /**
@@ -139,7 +139,7 @@ void publishConfig(long cmdId) {
   snprintf(topic, sizeof(topic), "cam/%s/config", mqtt_client_id.c_str());
   
   mqttClient.publish(topic, buffer, 0);
-  Serial.printf("已发布配置: %d字节\n", strlen(buffer));
+  // Serial.printf("已发布配置: %d字节\n", strlen(buffer));
   
   // 如果有cmdId，同时发布result
   if (cmdId > 0) {

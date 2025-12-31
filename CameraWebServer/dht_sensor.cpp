@@ -48,5 +48,5 @@ void readAndPublishDHT() {
   snprintf(topic, sizeof(topic), "cam/%s/dht", mqtt_client_id.c_str());
   
   mqttClient.publish(topic, buffer, 0);
-  Serial.printf("温湿度: %.1f℃ %.1f%%, 光照:%s\n", temperature, humidity, lightDigitalValue ? "暗" : "亮");
+  // Serial.printf("温湿度: %.1f℃ %.1f%%, 光照:%s\n", temperature, humidity, lightDigitalValue ? "暗" : "亮");
 }

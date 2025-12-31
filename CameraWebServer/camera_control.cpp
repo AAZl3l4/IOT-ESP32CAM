@@ -47,7 +47,7 @@ void captureAndUpload(long cmdId) {
 }
 
 /**
- * HTTP上传图片到后端
+ * HTTP上传图片到后端（分块传输，节省内存）
  */
 void uploadImage(camera_fb_t *fb, long cmdId) {
   if (WiFi.status() != WL_CONNECTED) {
@@ -56,85 +56,127 @@ void uploadImage(camera_fb_t *fb, long cmdId) {
     return;
   }
 
-  Serial.println("开始上传图片...");
+  Serial.println("开始上传图片（分块传输）...");
   
   char fileName[64];
   snprintf(fileName, sizeof(fileName), "%s_%ld.jpg", mqtt_client_id.c_str(), cmdId);
-  Serial.printf("文件名: %s (cmdId: %ld)\n", fileName, cmdId);
+  Serial.printf("文件名: %s\n", fileName);
   Serial.printf("图片大小: %d 字节\n", fb->len);
+
+  // 解析upload_url获取host和path
+  String url = upload_url;
+  String host, path;
+  int port = 80;
   
-  WiFiClient httpClient;
-  HTTPClient http;
+  if (url.startsWith("http://")) {
+    url = url.substring(7);
+  }
+  int pathIndex = url.indexOf('/');
+  if (pathIndex > 0) {
+    host = url.substring(0, pathIndex);
+    path = url.substring(pathIndex);
+  } else {
+    host = url;
+    path = "/";
+  }
   
-  if (!http.begin(httpClient, upload_url.c_str())) {
-    Serial.println("✗ HTTP初始化失败");
-    publishResult(cmdId, false, "HTTP初始化失败");
-    http.end();
+  // 检查是否有端口号
+  int portIndex = host.indexOf(':');
+  if (portIndex > 0) {
+    port = host.substring(portIndex + 1).toInt();
+    host = host.substring(0, portIndex);
+  }
+  
+  Serial.printf("连接到: %s:%d%s\n", host.c_str(), port, path.c_str());
+  
+  WiFiClient client;
+  client.setTimeout(30);  // 30秒超时
+  
+  if (!client.connect(host.c_str(), port)) {
+    Serial.println("✗ 连接服务器失败");
+    publishResult(cmdId, false, "连接失败");
     return;
   }
   
-  http.setTimeout(20000);
+  // 构建multipart边界
+  String boundary = "----ESP32CamBoundary";
   
-  // 构建multipart/form-data请求
-  String boundary = "----WebKitFormBoundary7MA4YWxkTrZu0gW";
-  String contentType = "multipart/form-data; boundary=" + boundary;
+  // 第一部分：文件名字段
+  String part1 = "--" + boundary + "\r\n";
+  part1 += "Content-Disposition: form-data; name=\"fileName\"\r\n\r\n";
+  part1 += String(fileName) + "\r\n";
   
-  String body = "";
-  body += "--" + boundary + "\r\n";
-  body += "Content-Disposition: form-data; name=\"fileName\"\r\n\r\n";
-  body += String(fileName) + "\r\n";
-  body += "--" + boundary + "\r\n";
-  body += "Content-Disposition: form-data; name=\"file\"; filename=\"" + String(fileName) + "\"\r\n";
-  body += "Content-Type: image/jpeg\r\n\r\n";
+  // 第二部分头：文件字段开始
+  String part2Header = "--" + boundary + "\r\n";
+  part2Header += "Content-Disposition: form-data; name=\"file\"; filename=\"" + String(fileName) + "\"\r\n";
+  part2Header += "Content-Type: image/jpeg\r\n\r\n";
   
+  // 结束边界
   String endBoundary = "\r\n--" + boundary + "--\r\n";
   
-  size_t totalLen = body.length() + fb->len + endBoundary.length();
-  Serial.printf("总上传大小: %d 字节\n", totalLen);
+  // 计算总长度
+  size_t contentLength = part1.length() + part2Header.length() + fb->len + endBoundary.length();
   
-  // 分配内存
-  uint8_t* postData = (uint8_t*)malloc(totalLen);
-  if (postData == NULL) {
-    Serial.println("✗ 内存分配失败");
-    publishResult(cmdId, false, "内存不足");
-    http.end();
-    return;
-  }
+  // 发送HTTP请求头
+  client.printf("POST %s HTTP/1.1\r\n", path.c_str());
+  client.printf("Host: %s\r\n", host.c_str());
+  client.printf("Content-Type: multipart/form-data; boundary=%s\r\n", boundary.c_str());
+  client.printf("Content-Length: %d\r\n", contentLength);
+  client.print("Connection: close\r\n\r\n");
   
-  // 组装数据
-  size_t offset = 0;
-  memcpy(postData + offset, body.c_str(), body.length());
-  offset += body.length();
-  memcpy(postData + offset, fb->buf, fb->len);
-  offset += fb->len;
-  memcpy(postData + offset, endBoundary.c_str(), endBoundary.length());
+  Serial.println("发送第1块: 表单头...");
+  // 发送第1块：表单头部分
+  client.print(part1);
+  client.print(part2Header);
+  delay(10);
   
-  http.addHeader("Content-Type", contentType);
-  http.addHeader("Content-Length", String(totalLen));
-  
-  Serial.println("发送POST请求...");
-  
-  int httpCode = http.POST(postData, totalLen);
-  free(postData);
-  
-  if (httpCode > 0) {
-    Serial.printf("HTTP响应码: %d\n", httpCode);
-    String response = http.getString();
-    Serial.println("响应: " + response);
-    
-    if (httpCode == 200) {
-      Serial.println("✓ 上传成功！");
-      publishResult(cmdId, true, "上传成功");
-    } else {
-      Serial.printf("✗ 上传失败，错误码 %d\n", httpCode);
-      publishResult(cmdId, false, "上传失败");
+  Serial.println("发送第2块: 图片数据...");
+  // 发送第2块：图片数据（分小块发送）
+  size_t chunkSize = 4096;  // 每块4KB
+  size_t sent = 0;
+  while (sent < fb->len) {
+    size_t toSend = min(chunkSize, fb->len - sent);
+    size_t written = client.write(fb->buf + sent, toSend);
+    if (written == 0) {
+      Serial.println("✗ 发送图片数据失败");
+      publishResult(cmdId, false, "发送失败");
+      client.stop();
+      return;
     }
-  } else {
-    Serial.printf("✗ HTTP错误: %s\n", http.errorToString(httpCode).c_str());
-    publishResult(cmdId, false, "HTTP错误");
+    sent += written;
+    delay(1);  // 小延迟避免缓冲区溢出
+  }
+  Serial.printf("已发送图片: %d 字节\n", sent);
+  
+  // 发送结束边界
+  client.print(endBoundary);
+  Serial.println("发送完成，等待响应...");
+  
+  // 等待响应
+  unsigned long timeout = millis() + 15000;
+  while (client.connected() && !client.available()) {
+    if (millis() > timeout) {
+      Serial.println("✗ 等待响应超时");
+      publishResult(cmdId, false, "响应超时");
+      client.stop();
+      return;
+    }
+    delay(10);
   }
   
-  http.end();
+  // 读取响应
+  String statusLine = client.readStringUntil('\n');
+  Serial.println("响应: " + statusLine);
+  
+  if (statusLine.indexOf("200") > 0) {
+    Serial.println("✓ 上传成功！");
+    publishResult(cmdId, true, "上传成功");
+  } else {
+    Serial.println("✗ 上传失败");
+    publishResult(cmdId, false, "上传失败");
+  }
+  
+  client.stop();
   Serial.println("上传完成");
 }
 
