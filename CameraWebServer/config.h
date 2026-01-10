@@ -29,7 +29,7 @@
 // ===========================
 #define DEFAULT_WIFI_SSID "2702"
 #define DEFAULT_WIFI_PASS "18063328637"
-#define DEFAULT_MQTT_SERVER "broker.emqx.io"
+#define DEFAULT_MQTT_SERVER "gmqt.goflys.cn"
 #define DEFAULT_MQTT_PORT 1883
 #define DEFAULT_MQTT_CLIENT "esp32cam"
 #define DEFAULT_UPLOAD_URL "http://192.168.124.68:8080/mqtt/cam/upload"

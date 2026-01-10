@@ -18,7 +18,7 @@ mybatis-plus:
       id-type: auto
 
 mqtt:
-  url: tcp://broker.emqx.io:1883
+  url: tcp://gmqt.goflys.cn:1883
 
 # ModelScope AI 配置
 modelscope:

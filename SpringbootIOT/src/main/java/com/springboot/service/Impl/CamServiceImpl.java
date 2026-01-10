@@ -194,7 +194,7 @@ public class CamServiceImpl implements CamService {
     @Override
     public String controlLed(String clientId, int value) {
         long id = generateCmdId();
-        String json = JsonUtil.toJson(Map.of("DeviceAutoState id", id, "op", "led", "val", value));
+        String json = JsonUtil.toJson(Map.of("id", id, "op", "led", "val", value));
         mqttGateway.send("cam/" + clientId + "/cmd", json);
         log.info("发送LED控制指令: clientId={}, cmdId={}, value={}", clientId, id, value);
         // 记录操作日志
