@@ -234,7 +234,7 @@ onUnmounted(() => {
     color: rgba(255, 255, 255, 0.6);
     padding-left: 24px;
     border-left: 1px solid rgba(255, 255, 255, 0.15);
-    max-width: 300px;
+    max-width: 280px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
