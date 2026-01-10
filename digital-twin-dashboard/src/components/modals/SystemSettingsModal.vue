@@ -18,12 +18,14 @@ const mqttBroker = computed(() => store.deviceConfig.mqttBroker || '')
 const mqttPort = computed(() => store.deviceConfig.mqttPort || 1883)
 const uploadUrlVal = computed(() => store.deviceConfig.uploadUrl || '')
 const statusIntervalVal = computed(() => store.deviceConfig.statusInterval || 30000)
+const dhtIntervalVal = computed(() => store.deviceConfig.dhtInterval || 5000)
 
 // 表单本地状态（用于编辑）
 const wifiForm = ref({ ssid: '', password: '' })
 const mqttForm = ref({ broker: '', port: 1883 })
 const uploadUrl = ref('')
 const reportInterval = ref(30000)
+const dhtInterval = ref(5000)
 
 // 每次打开弹窗时从store同步到本地表单
 import { watch } from 'vue'
@@ -35,6 +37,7 @@ watch(() => props.visible, (val) => {
         mqttForm.value.port = store.deviceConfig.mqttPort || 1883
         uploadUrl.value = store.deviceConfig.uploadUrl || ''
         reportInterval.value = store.deviceConfig.statusInterval || 30000
+        dhtInterval.value = store.deviceConfig.dhtInterval || 5000
     }
 })
 
@@ -89,6 +92,13 @@ async function setStatusInterval() {
     if (res.code === 0) alert('上报间隔已更新')
 }
 
+async function setDhtInterval() {
+    const res = await apiCall(`${BASE_URL}/mqtt/dht-interval/${store.clientId}`, 'POST', {
+        interval: dhtInterval.value
+    })
+    if (res.code === 0) alert('DHT采集间隔已更新')
+}
+
 async function refreshConfig() {
     await apiCall(`${BASE_URL}/mqtt/cam/${store.clientId}/get_config`, 'POST')
     alert('请求刷新配置指令已发送')
@@ -103,98 +113,173 @@ const showPassword = ref(false)
 </script>
 
 <template>
-  <ModalDialog :visible="visible" title="🔧 系统配置管理" @close="$emit('close')">
-    <div class="settings-content">
-      
-      <!-- WiFi设置 -->
-      <div class="section warning">
-        <h3>📶 WiFi 设置</h3>
-        <div class="form-group">
-            <label>SSID</label>
-            <input type="text" v-model="wifiForm.ssid" placeholder="WiFi名称">
-        </div>
-        <div class="form-group">
-            <label>密码</label>
-            <div class="password-group">
-                <input :type="showPassword ? 'text' : 'password'" v-model="wifiForm.password" placeholder="WiFi密码">
-                <button class="icon-btn" @click="showPassword=!showPassword">{{ showPassword ? '🙈' : '👁️' }}</button>
+  <ModalDialog :visible="visible" title="🔧 系统设置" @close="$emit('close')">
+    <div class="settings-container custom-scrollbar">
+      <div class="settings-grid">
+        <!-- 左侧：网络连接 -->
+        <div class="settings-col">
+            <div class="section-title">📡 网络连接</div>
+            
+            <!-- WiFi设置 -->
+            <div class="setting-card warning-card">
+                <div class="card-header">WiFi 配置</div>
+                <div class="form-group">
+                    <label>SSID (名称)</label>
+                    <input type="text" v-model="wifiForm.ssid" placeholder="请输入WiFi名称">
+                </div>
+                <div class="form-group">
+                    <label>Password (密码)</label>
+                    <div class="password-group">
+                        <input :type="showPassword ? 'text' : 'password'" v-model="wifiForm.password" placeholder="请输入WiFi密码">
+                        <button class="eye-btn" @click="showPassword=!showPassword">{{ showPassword ? '🙈' : '👁️' }}</button>
+                    </div>
+                </div>
+                <button class="btn btn-warning full-width" @click="setWiFi">保存并重启 WiFi</button>
+            </div>
+
+            <!-- MQTT设置 -->
+            <div class="setting-card warning-card">
+                <div class="card-header">MQTT 服务</div>
+                <div class="form-group">
+                    <label>Broker Address</label>
+                    <input type="text" v-model="mqttForm.broker" placeholder="broker.emqx.io">
+                </div>
+                <div class="form-group">
+                    <label>Broker Port</label>
+                    <input type="number" v-model="mqttForm.port" placeholder="1883">
+                </div>
+                <button class="btn btn-warning full-width" @click="setMQTT">保存并重启 MQTT</button>
             </div>
         </div>
-        <button class="btn btn-warning full-width" @click="setWiFi">⚠️ 设置WiFi (重启)</button>
-      </div>
 
-      <!-- MQTT设置 -->
-      <div class="section warning">
-        <h3>📡 MQTT 设置</h3>
-        <div class="form-group">
-            <label>Broker</label>
-            <input type="text" v-model="mqttForm.broker" placeholder="broker.emqx.io">
-        </div>
-        <div class="form-group">
-            <label>Port</label>
-            <input type="number" v-model="mqttForm.port" placeholder="1883">
-        </div>
-        <button class="btn btn-warning full-width" @click="setMQTT">⚠️ 设置MQTT (重启)</button>
-      </div>
+        <!-- 右侧：数据与维护 -->
+        <div class="settings-col">
+            <div class="section-title">📊 数据与上报</div>
+            
+            <div class="setting-card">
+                <div class="card-header">数据采集频率</div>
+                
+                <!-- DHT采集间隔 -->
+                <div class="form-row">
+                    <div class="row-label">
+                        <span>DHT温湿度采集</span>
+                        <small>传感器读取频率</small>
+                    </div>
+                    <div class="row-action">
+                        <select v-model="dhtInterval">
+                            <option :value="1000">1秒</option>
+                            <option :value="2000">2秒</option>
+                            <option :value="5000">5秒</option>
+                            <option :value="10000">10秒</option>
+                            <option :value="30000">30秒</option>
+                            <option :value="60000">60秒</option>
+                        </select>
+                        <button class="btn-icon" @click="setDhtInterval" title="保存">💾</button>
+                    </div>
+                </div>
 
-      <!-- 其他设置 -->
-      <div class="section">
-        <h3>⚙️ 常规设置</h3>
-        <div class="form-group">
-            <label>图片上传URL</label>
-            <div class="action-input">
-                <input type="text" v-model="uploadUrl">
-                <button class="btn btn-small" @click="setUploadUrl">保存</button>
+                <!-- 状态上报间隔 -->
+                <div class="form-row">
+                    <div class="row-label">
+                        <span>设备状态上报</span>
+                        <small>Heartbeat频率</small>
+                    </div>
+                    <div class="row-action">
+                        <select v-model="reportInterval">
+                            <option :value="5000">5秒</option>
+                            <option :value="10000">10秒</option>
+                            <option :value="30000">30秒</option>
+                            <option :value="60000">60秒</option>
+                            <option :value="300000">5分钟</option>
+                        </select>
+                        <button class="btn-icon" @click="setStatusInterval" title="保存">💾</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="setting-card">
+                <div class="card-header">图片上传服务</div>
+                <div class="form-group">
+                    <label>Upload URL</label>
+                    <div class="input-with-btn">
+                        <input type="text" v-model="uploadUrl" placeholder="http://...">
+                        <button class="btn-icon" @click="setUploadUrl">💾</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title" style="margin-top:20px;">🛡️ 系统维护</div>
+            <div class="maintenance-actions">
+                <button class="btn btn-primary" @click="refreshConfig">
+                    <span class="btn-icon">🔄</span> 刷新配置
+                </button>
+                <button class="btn btn-danger" @click="resetConfig">
+                    <span class="btn-icon">⚠️</span> 恢复出厂
+                </button>
             </div>
         </div>
-        
-        <div class="form-group">
-            <label>状态上报间隔</label>
-            <div class="action-input">
-                <select v-model="reportInterval">
-                    <option :value="10000">10秒</option>
-                    <option :value="30000">30秒</option>
-                    <option :value="60000">60秒</option>
-                    <option :value="300000">5分钟</option>
-                </select>
-                <button class="btn btn-small" @click="setStatusInterval">设置</button>
-            </div>
-        </div>
       </div>
-
-      <!-- 维护 -->
-      <div class="footer-actions">
-        <button class="btn btn-primary" @click="refreshConfig">🔄 刷新设备配置</button>
-        <button class="btn btn-danger" @click="resetConfig">⚠️ 恢复出厂设置</button>
-      </div>
-
     </div>
   </ModalDialog>
 </template>
 
 <style scoped>
-.settings-content {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+.settings-container {
+    max-height: 70vh;
+    overflow-y: auto;
+    padding: 10px;
 }
 
-.section {
-    background: rgba(0,0,0,0.2);
-    padding: 15px;
-    border-radius: 8px;
+.settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+@media (max-width: 768px) {
+    .settings-grid { grid-template-columns: 1fr; }
+}
+
+.settings-col {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.section-title {
+    font-size: 13px;
+    color: var(--theme-primary);
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+    padding-left: 8px;
     border-left: 3px solid var(--theme-primary);
 }
 
-.section.warning {
-    border-left-color: var(--theme-warning);
-    background: rgba(255, 152, 0, 0.05);
+.setting-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.3s;
 }
 
-h3 {
-    margin: 0 0 15px 0;
+.setting-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.warning-card {
+    border-left: 3px solid var(--theme-warning);
+    background: linear-gradient(90deg, rgba(255, 152, 0, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+}
+
+.card-header {
     font-size: 14px;
-    color: var(--text-primary);
+    color: white;
+    font-weight: 500;
+    margin-bottom: 12px;
+    opacity: 0.9;
 }
 
 .form-group {
@@ -203,18 +288,26 @@ h3 {
 
 .form-group label {
     display: block;
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-secondary);
-    margin-bottom: 5px;
+    margin-bottom: 4px;
 }
 
 input, select {
     width: 100%;
-    padding: 8px;
-    background: rgba(0,0,0,0.3);
-    border: 1px solid rgba(255,255,255,0.1);
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     color: white;
-    border-radius: 4px;
+    border-radius: 6px;
+    font-size: 13px;
+    transition: all 0.3s;
+}
+
+input:focus, select:focus {
+    border-color: var(--theme-primary);
+    box-shadow: 0 0 10px rgba(0, 242, 255, 0.2);
+    outline: none;
 }
 
 .password-group {
@@ -222,7 +315,7 @@ input, select {
     display: flex;
 }
 
-.icon-btn {
+.eye-btn {
     position: absolute;
     right: 8px;
     top: 50%;
@@ -230,40 +323,103 @@ input, select {
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 14px;
+    opacity: 0.7;
 }
 
 .full-width {
     width: 100%;
-    margin-top: 5px;
+    margin-top: 8px;
 }
 
-.action-input {
+.form-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.form-row:last-child {
+    border-bottom: none;
+}
+
+.row-label {
+    display: flex;
+    flex-direction: column;
+}
+
+.row-label span {
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.row-label small {
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+.row-action {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.row-action select {
+    width: 80px;
+    padding: 4px 8px;
+    height: 30px;
+}
+
+.input-with-btn {
     display: flex;
     gap: 8px;
 }
 
+.btn-icon {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-icon:hover {
+    background: var(--theme-primary);
+    color: black;
+}
+
+.maintenance-actions {
+    display: flex;
+    gap: 12px;
+}
+
 .btn {
-    padding: 8px 15px;
+    padding: 10px 16px;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 12px;
-    transition: 0.2s;
-}
-
-.btn:active { transform: scale(0.98); }
-
-.btn-warning { background: var(--theme-warning); color: #000; }
-.btn-primary { background: var(--theme-primary); color: #000; }
-.btn-danger { background: var(--theme-danger); color: white; }
-.btn-small { padding: 4px 10px; background: #444; color: #ccc; }
-
-.footer-actions {
+    font-weight: bold;
     display: flex;
-    justify-content: space-between;
-    margin-top: 10px;
-    padding-top: 15px;
-    border-top: 1px solid rgba(255,255,255,0.1);
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.3s;
 }
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn-warning { background: linear-gradient(135deg, #ff9800, #f57c00); color: white; }
+.btn-primary { background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)); color: #000; flex: 1; }
+.btn-danger { background: linear-gradient(135deg, #ff4d4d, #c0392b); color: white; flex: 1; }
 </style>

@@ -16,7 +16,10 @@ const store = useDeviceStore()
 const timeStr = ref('')
 const dateStr = ref('')
 const weekStr = ref('')
+const weatherIcon = ref('🌤️')
+const weatherTemp = ref('--°C')
 let timer = null
+let weatherTimer = null
 
 // 一言
 const hitokoto = ref('加载中...')
@@ -27,6 +30,27 @@ function updateTime() {
     dateStr.value = now.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })
     const weeks = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
     weekStr.value = weeks[now.getDay()]
+}
+
+async function fetchWeather() {
+    try {
+        // 使用 wttr.in 获取简洁天气信息 (JSON格式不稳定，使用文本格式解析)
+        // format=%c+%t => 🌤️ +25°C
+        const res = await fetch('https://wttr.in/?format=%c+%t')
+        if (res.ok) {
+            const text = await res.text()
+            // 解析: "🌤️ +25°C" (处理可能的多个空格)
+            const parts = text.trim().split(/\s+/)
+            if (parts.length >= 2) {
+                weatherIcon.value = parts[0]
+                weatherTemp.value = parts[1].replace('+', '') // 去掉正号
+            }
+        }
+    } catch (e) {
+        console.error('天气获取失败:', e)
+        weatherIcon.value = '🌤️'
+        weatherTemp.value = 'N/A'
+    }
 }
 
 async function fetchHitokoto() {
@@ -43,42 +67,69 @@ onMounted(() => {
     updateTime()
     timer = setInterval(updateTime, 1000)
     fetchHitokoto()
+    fetchWeather()
+    // 每30分钟刷新一次天气
+    weatherTimer = setInterval(fetchWeather, 30 * 60 * 1000)
 })
 
 onUnmounted(() => {
     if (timer) clearInterval(timer)
+    if (weatherTimer) clearInterval(weatherTimer)
 })
 </script>
 
 <template>
   <div class="dashboard-header">
+    <div class="header-decoration-line"></div>
+    
     <div class="header-left">
         <div class="logo">
-            <span class="logo-icon">🛸</span>
-            <span class="logo-text">ESP32-CAM 数字孪生</span>
+            <div class="weather-widget" title="当地天气">
+                <span class="weather-icon">{{ weatherIcon }}</span>
+                <span class="weather-temp">{{ weatherTemp }}</span>
+            </div>
+            <div class="logo-text">
+                <span class="brand">ESP32-CAM</span>
+                <span class="subtitle">DIGITAL TWIN</span>
+            </div>
         </div>
         <div class="hitokoto">「 {{ hitokoto }} 」</div>
     </div>
     
     <div class="header-center">
         <div class="time-box">
-            <span class="date">{{ dateStr }} {{ weekStr }}</span>
+            <div class="date-row">
+                <span class="week">{{ weekStr }}</span>
+                <span class="date">{{ dateStr }}</span>
+            </div>
             <span class="time">{{ timeStr }}</span>
         </div>
     </div>
     
     <div class="header-right">
-        <!-- 功能按钮组 -->
-        <div class="action-buttons">
-            <button class="nav-btn" @click="$emit('open-modal', 'camera')">🎨 画质</button>
-            <button class="nav-btn" @click="$emit('open-modal', 'ai')">🤖 AI助手</button>
-            <button class="nav-btn" @click="$emit('open-modal', 'automation')">⚡ 自动化</button>
-            <button class="nav-btn" @click="$emit('open-modal', 'settings')">⚙️ 设置</button>
+        <!-- Dock栏风格功能钮 -->
+        <div class="control-dock">
+            <button class="dock-btn" @click="$emit('open-modal', 'camera')" title="画质参数">
+                <span class="dock-icon">🎨</span>
+                <span class="dock-label">画质</span>
+            </button>
+            <button class="dock-btn" @click="$emit('open-modal', 'ai')" title="AI助手">
+                <span class="dock-icon">🤖</span>
+                <span class="dock-label">助手</span>
+            </button>
+            <button class="dock-btn" @click="$emit('open-modal', 'automation')" title="自动化">
+                <span class="dock-icon">⚡</span>
+                <span class="dock-label">联动</span>
+            </button>
+            <div class="dock-divider"></div>
+            <button class="dock-btn settings" @click="$emit('open-modal', 'settings')" title="系统设置">
+                <span class="dock-icon">⚙️</span>
+            </button>
         </div>
 
         <div class="sse-status" :class="{ online: store.sseConnected }">
-            <span class="status-dot"></span>
-            <span class="status-text">{{ store.sseConnected ? '配置同步' : '连接中断' }}</span>
+            <div class="status-indicator"></div>
+            <span class="status-text">{{ store.sseConnected ? 'ONLINE' : 'OFFLINE' }}</span>
         </div>
     </div>
   </div>
@@ -86,40 +137,103 @@ onUnmounted(() => {
 
 <style scoped>
 .dashboard-header {
-    height: 60px;
-    background: rgba(10, 20, 40, 0.8);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(0, 242, 255, 0.2);
+    height: 70px;
+    background: linear-gradient(180deg, rgba(0, 10, 20, 0.9) 0%, rgba(0, 10, 20, 0.4) 100%);
+    backdrop-filter: blur(12px);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 20px;
-    color: white;
+    padding: 0 24px;
+    position: relative;
+    z-index: 100;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.header-decoration-line {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        transparent 0%, 
+        var(--theme-primary) 20%, 
+        var(--theme-secondary) 80%, 
+        transparent 100%
+    );
+    opacity: 0.5;
 }
 
 .header-left {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 30px;
     flex: 1;
 }
 
 .logo {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 20px;
-    font-weight: bold;
+    gap: 12px;
+}
+
+.weather-widget {
+    background: rgba(0, 242, 255, 0.1);
+    border: 1px solid rgba(0, 242, 255, 0.3);
+    border-radius: 20px;
+    padding: 4px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: help;
+    box-shadow: 0 0 15px rgba(0, 242, 255, 0.1);
+    transition: all 0.3s;
+    height: 40px;
+}
+
+.weather-widget:hover {
+    background: rgba(0, 242, 255, 0.2);
+    box-shadow: 0 0 20px rgba(0, 242, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.weather-icon { font-size: 20px; }
+.weather-temp { 
+    font-size: 14px; 
+    color: white; 
+    font-weight: bold; 
+    font-family: monospace;
+}
+
+.logo-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+}
+
+.brand {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: white;
+    font-family: 'Orbitron', sans-serif; /* 如果有 */
+}
+
+.subtitle {
+    font-size: 10px;
     color: var(--theme-primary);
-    text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+    letter-spacing: 2px;
+    text-transform: uppercase;
 }
 
 .hitokoto {
     font-size: 12px;
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.5);
+    padding-left: 20px;
+    border-left: 2px solid rgba(255, 255, 255, 0.1);
     max-width: 300px;
-    overflow: hidden;
     white-space: nowrap;
+    overflow: hidden;
     text-overflow: ellipsis;
 }
 
@@ -131,20 +245,26 @@ onUnmounted(() => {
 
 .time-box {
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
-.date {
-    display: block;
-    font-size: 12px;
-    color: var(--text-secondary);
+.date-row {
+    display: flex;
+    gap: 8px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.6);
+    letter-spacing: 1px;
 }
 
 .time {
-    font-size: 24px;
-    font-family: 'Courier New', monospace;
+    font-size: 28px;
     font-weight: bold;
     color: white;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    font-variant-numeric: tabular-nums;
 }
 
 .header-right {
@@ -152,64 +272,110 @@ onUnmounted(() => {
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    gap: 20px;
+    gap: 25px;
 }
 
-.action-buttons {
+/* 核心Dock栏样式 */
+.control-dock {
     display: flex;
-    gap: 10px;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 100px;
+    padding: 4px 6px;
+    gap: 4px;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
 }
 
-.nav-btn {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: white;
-    padding: 6px 12px;
-    border-radius: 4px;
-    font-size: 12px;
+.dock-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    padding: 6px 16px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
 }
 
-.nav-btn:hover {
-    background: var(--theme-primary);
-    color: #000;
-    box-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+.dock-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(0, 242, 255, 0.1);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s, height 0.3s;
+}
+
+.dock-btn:hover::before {
+    width: 150px;
+    height: 150px;
+}
+
+.dock-btn:hover {
+    color: white;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+}
+
+.dock-btn.settings {
+    padding: 6px 12px;
+}
+
+.dock-btn:active {
+    transform: scale(0.95);
+}
+
+.dock-icon { font-size: 16px; }
+.dock-label { font-size: 12px; font-weight: 500; }
+
+.dock-divider {
+    width: 1px;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 0 4px;
 }
 
 .sse-status {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 20px;
-    border: 1px solid rgba(244, 67, 54, 0.5);
+    gap: 8px;
+    background: rgba(10, 10, 10, 0.5);
+    padding: 4px 12px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.sse-status.online {
-    border-color: rgba(76, 175, 80, 0.5);
-}
-
-.status-dot {
-    width: 8px;
-    height: 8px;
+.status-indicator {
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
-    background: #f44336;
-    box-shadow: 0 0 5px #f44336;
+    background: #333;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.05);
+    transition: all 0.3s;
 }
 
-.sse-status.online .status-dot {
-    background: #4caf50;
-    box-shadow: 0 0 5px #4caf50;
+.sse-status.online .status-indicator {
+    background: var(--theme-success);
+    box-shadow: 0 0 8px var(--theme-success);
 }
 
 .status-text {
-    font-size: 12px;
-    color: #f44336;
+    font-size: 10px;
+    font-family: monospace;
+    opacity: 0.5;
+    letter-spacing: 1px;
 }
 
 .sse-status.online .status-text {
-    color: #4caf50;
+    color: var(--theme-success);
+    opacity: 1;
 }
 </style>

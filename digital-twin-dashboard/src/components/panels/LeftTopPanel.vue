@@ -18,36 +18,8 @@ const store = useDeviceStore()
 // Tab切换: dht温湿度 / status设备状态
 const activeTab = ref('dht')
 
-// DHT读取间隔弹窗
-const showIntervalModal = ref(false)
-const dhtInterval = ref(5000)
-const dhtIntervalOptions = [
-  { label: '1秒', value: 1000 },
-  { label: '2秒', value: 2000 },
-  { label: '5秒', value: 5000 },
-  { label: '10秒', value: 10000 },
-  { label: '30秒', value: 30000 },
-  { label: '60秒', value: 60000 }
-]
-
-watch(() => store.deviceConfig.dhtInterval, (val) => {
-  if (val) dhtInterval.value = val
-}, { immediate: true })
-
-async function setDhtInterval() {
-  try {
-    const response = await fetch(`${BASE_URL}/mqtt/dht-interval/${store.clientId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ interval: dhtInterval.value })
-    })
-    const result = await response.json()
-    console.log('[DHT] 设置间隔结果:', result)
-    showIntervalModal.value = false
-  } catch (e) {
-    console.error('[DHT] 设置失败:', e)
-  }
-}
+// Tab切换: dht温湿度 / status设备状态
+const activeTab = ref('dht')
 
 // 温湿度图表
 const dhtChartOption = computed(() => ({
@@ -92,7 +64,6 @@ function formatUptime(seconds) {
     <div class="panel-tabs">
       <div class="tab-item" :class="{ active: activeTab === 'dht' }" @click="activeTab = 'dht'">🌡️ 温湿度</div>
       <div class="tab-item" :class="{ active: activeTab === 'status' }" @click="activeTab = 'status'">📶 设备状态</div>
-      <button class="settings-btn" @click="showIntervalModal = true" title="采集间隔设置">⚙️</button>
     </div>
     
     <div class="panel-content">
@@ -154,36 +125,6 @@ function formatUptime(seconds) {
         </div>
       </template>
     </div>
-    
-    <!-- 采集间隔弹窗 -->
-    <div v-if="showIntervalModal" class="modal-overlay" @click.self="showIntervalModal = false">
-      <div class="modal-content">
-        <div class="modal-header">
-          <span>⏱️ 采集间隔设置</span>
-          <button class="close-btn" @click="showIntervalModal = false">×</button>
-        </div>
-        <div class="modal-body">
-          <div class="interval-options">
-            <button 
-              v-for="opt in dhtIntervalOptions" 
-              :key="opt.value" 
-              class="interval-option"
-              :class="{ active: dhtInterval === opt.value }"
-              @click="dhtInterval = opt.value"
-            >
-              {{ opt.label }}
-            </button>
-          </div>
-          <div class="current-interval">
-            当前设置: <strong>{{ dhtIntervalOptions.find(o => o.value === dhtInterval)?.label || '--' }}</strong>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn-cancel" @click="showIntervalModal = false">取消</button>
-          <button class="btn-confirm" @click="setDhtInterval">确认设置</button>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -192,43 +133,32 @@ function formatUptime(seconds) {
 
 .panel-tabs {
   display: flex;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  align-items: center;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 4px;
+  border-radius: 6px;
+  margin-bottom: 10px;
 }
 
 .tab-item {
   flex: 1;
   text-align: center;
-  padding: 8px 0;
-  font-size: 12px;
+  padding: 6px 0;
+  font-size: 11px;
   color: var(--text-secondary);
   cursor: pointer;
-  background: rgba(0,0,0,0.2);
-  transition: 0.3s;
+  border-radius: 4px;
+  transition: all 0.3s;
+  border: 1px solid transparent;
 }
 
-.tab-item:hover { color: white; background: rgba(255,255,255,0.05); }
+.tab-item:hover { color: white; }
 
 .tab-item.active {
-  color: var(--theme-primary);
-  background: transparent;
-  border-bottom: 2px solid var(--theme-primary);
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.1);
   font-weight: bold;
-}
-
-.settings-btn {
-  width: 36px;
-  height: 32px;
-  background: rgba(0, 242, 255, 0.15);
-  border: 1px solid rgba(0, 242, 255, 0.3);
-  color: var(--theme-primary);
-  font-size: 14px;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.settings-btn:hover {
-  background: rgba(0, 242, 255, 0.3);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .panel-content { flex: 1; padding: 10px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }

@@ -162,7 +162,12 @@ onUnmounted(() => {
 .dashboard-layout {
   width: 100vw;
   height: 100vh;
-  background: black;
+  background: #050a14;
+  background-image: 
+    linear-gradient(rgba(0, 242, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 242, 255, 0.03) 1px, transparent 1px),
+    radial-gradient(circle at 50% 50%, rgba(20, 40, 60, 0.5) 0%, rgba(0, 5, 10, 1) 100%);
+  background-size: 40px 40px, 40px 40px, 100% 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -186,19 +191,21 @@ onUnmounted(() => {
 }
 
 .panel-wrapper {
-  background: rgba(16, 30, 60, 0.6);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(0, 242, 255, 0.2);
-  border-radius: 8px;
+  background: rgba(16, 30, 60, 0.4);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 2px solid rgba(0, 242, 255, 0.3);
+  border-radius: 12px;
   overflow: hidden;
   position: relative;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .panel-wrapper:hover {
-  border-color: rgba(0, 242, 255, 0.5);
-  box-shadow: 0 0 20px rgba(0, 242, 255, 0.2);
+  border-top-color: var(--theme-primary);
+  box-shadow: 0 8px 24px rgba(0, 242, 255, 0.15);
+  transform: translateY(-2px);
 }
 
 .h-40 { height: 40%; }
@@ -209,9 +216,11 @@ onUnmounted(() => {
 .center-stage {
   flex: 1;
   position: relative;
-  background: radial-gradient(circle at center, #1a2a4a 0%, #000 100%);
-  border-radius: 8px;
+  background: radial-gradient(circle at center, #112 0%, #000 100%);
+  border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 2px solid rgba(0, 242, 255, 0.3);
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
 }
 </style>
