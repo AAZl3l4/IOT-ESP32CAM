@@ -18,8 +18,6 @@ const store = useDeviceStore()
 // Tab切换: dht温湿度 / status设备状态
 const activeTab = ref('dht')
 
-// Tab切换: dht温湿度 / status设备状态
-const activeTab = ref('dht')
 
 // 温湿度图表
 const dhtChartOption = computed(() => ({

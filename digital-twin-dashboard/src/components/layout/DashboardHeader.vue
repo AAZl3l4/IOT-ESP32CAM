@@ -181,14 +181,14 @@ onUnmounted(() => {
     background: rgba(0, 242, 255, 0.1);
     border: 1px solid rgba(0, 242, 255, 0.3);
     border-radius: 20px;
-    padding: 4px 12px;
+    padding: 0 16px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
     cursor: help;
     box-shadow: 0 0 15px rgba(0, 242, 255, 0.1);
     transition: all 0.3s;
-    height: 40px;
+    height: 36px;
 }
 
 .weather-widget:hover {
@@ -199,16 +199,18 @@ onUnmounted(() => {
 
 .weather-icon { font-size: 20px; }
 .weather-temp { 
-    font-size: 14px; 
+    font-size: 15px; 
     color: white; 
-    font-weight: bold; 
-    font-family: monospace;
+    font-weight: 600; 
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    letter-spacing: 0.5px;
 }
 
 .logo-text {
     display: flex;
     flex-direction: column;
-    line-height: 1.1;
+    justify-content: center;
+    line-height: 1.2;
 }
 
 .brand {
@@ -216,25 +218,29 @@ onUnmounted(() => {
     font-weight: 800;
     letter-spacing: 1px;
     color: white;
-    font-family: 'Orbitron', sans-serif; /* 如果有 */
+    font-family: 'Inter', system-ui, sans-serif;
 }
 
 .subtitle {
     font-size: 10px;
     color: var(--theme-primary);
-    letter-spacing: 2px;
+    letter-spacing: 3px;
     text-transform: uppercase;
+    font-weight: 600;
 }
 
 .hitokoto {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.5);
-    padding-left: 20px;
-    border-left: 2px solid rgba(255, 255, 255, 0.1);
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+    padding-left: 24px;
+    border-left: 1px solid rgba(255, 255, 255, 0.15);
     max-width: 300px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-family: 'Inter', system-ui, sans-serif;
+    letter-spacing: 0.5px;
+    font-style: italic;
 }
 
 .header-center {
@@ -248,23 +254,28 @@ onUnmounted(() => {
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: 2px;
 }
 
 .date-row {
     display: flex;
-    gap: 8px;
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.6);
+    gap: 12px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
     letter-spacing: 1px;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 500;
 }
 
 .time {
-    font-size: 28px;
-    font-weight: bold;
+    font-size: 32px;
+    font-weight: 700;
     color: white;
     letter-spacing: 2px;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
     font-variant-numeric: tabular-nums;
+    font-family: 'Inter', system-ui, sans-serif; /* 更加现代的字体 */
+    line-height: 1;
 }
 
 .header-right {
@@ -272,27 +283,29 @@ onUnmounted(() => {
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    gap: 25px;
+    gap: 30px;
 }
 
 /* 核心Dock栏样式 */
 .control-dock {
     display: flex;
     align-items: center;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 100px;
-    padding: 4px 6px;
-    gap: 4px;
-    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+    padding: 0 8px;
+    gap: 6px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    height: 44px;
 }
 
 .dock-btn {
     background: transparent;
     border: none;
     color: rgba(255, 255, 255, 0.7);
-    padding: 6px 16px;
-    border-radius: 20px;
+    padding: 0 16px;
+    height: 32px;
+    border-radius: 16px;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -322,36 +335,42 @@ onUnmounted(() => {
 
 .dock-btn:hover {
     color: white;
-    text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
 }
 
 .dock-btn.settings {
-    padding: 6px 12px;
+    padding: 0 10px;
 }
 
 .dock-btn:active {
     transform: scale(0.95);
 }
 
-.dock-icon { font-size: 16px; }
-.dock-label { font-size: 12px; font-weight: 500; }
+.dock-icon { font-size: 18px; }
+.dock-label { 
+    font-size: 13px; 
+    font-weight: 600; 
+    font-family: 'Inter', system-ui, sans-serif;
+}
 
 .dock-divider {
     width: 1px;
-    height: 16px;
-    background: rgba(255, 255, 255, 0.1);
-    margin: 0 4px;
+    height: 18px;
+    background: rgba(255, 255, 255, 0.15);
+    margin: 0 6px;
 }
 
 .sse-status {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: rgba(10, 10, 10, 0.5);
-    padding: 4px 12px;
-    border-radius: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.4);
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(4px);
 }
+
 
 .status-indicator {
     width: 6px;
