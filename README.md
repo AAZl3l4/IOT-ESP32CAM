@@ -158,41 +158,56 @@
 
 ---
 
+## 🌟 项目亮点 (Highlights)
+
+### 1. 🖥️ 3D数字孪生与交互
+- **Three.js 交互式场景**：构建了完整的 ESP32-CAM 硬件模型的 3D 数字孪生。
+- **状态实时同步**：舵机角度、LED 状态、风扇转动等物理状态通过 MQTT -> SSE 毫秒级同步至 3D 模型。
+- **👋 手势控制**：集成 MediaPipe Hands，通过电脑摄像头即可实现隔空手势交互（双指指向查看数据、张手旋转视角、捏合缩放）。
+
+### 2. 🎨 现代可视化仪表盘
+- **Glassmorphism 风格**：全深色磨砂玻璃 UI 设计，科技感十足。
+- **实时图表监控**：集成 ECharts 展示温湿度和设备状态（内存/RSSI）历史趋势。
+- **Dock 栏导航**：Mac 风格的底部控制栏，集成画质、AI、自动化等快捷入口。
+- **实时天气集成**：顶部动态天气组件，实时获取当地气象数据。
+
+### 3. 🧠 AI 深度融合
+- **视觉问答**：集成 Qwen-VL 大模型，支持"拍照并分析"、"这是什么"等多轮对话。
+- **智能自动化**：基于此时此刻的传感器数据（温度/湿度/光照）触发自动化场景（如：过热自动开风扇）。
+- **ASR 语音控制**：硬件级离线语音识别，支持"打开风扇"、"开灯"等指令，并实时反馈至前端。
+
+---
+
 ## 🏗️ 系统架构
 
 ```mermaid
 graph TB
-    subgraph "前端 Web"
-        A[test-panel.html<br/>控制面板]
+    subgraph "前端数字孪生"
+        A[Vue 3 Dashboard]
+        A1[Three.js 3D场景]
+        A2[MediaPipe 手势识别]
+        A3[ECharts 图表]
     end
     
     subgraph "Spring Boot 后端"
-        B[CamController<br/>REST API]
-        C[CamService<br/>业务逻辑]
-        D[MqttGateway<br/>MQTT发送]
-        E[SseService<br/>实时推送]
-        F[DeviceStatusHistoryService]
+        B[REST API / SSE推送]
+        C[业务逻辑 (Service)]
+        D[MQTT Gateway]
+        E[AI 整合 (Qwen-VL)]
     end
     
-    subgraph "MQTT Broker"
-        G[broker.emqx.io]
+    subgraph "物理设备"
+        F[ESP32-CAM]
+        G[传感器 (DHT22/Light)]
+        H[执行器 (Servo/Relay/LED)]
+        I[ASR Pro 语音模块]
     end
     
-    subgraph "ESP32-CAM"
-        H[mqtt_handler.cpp]
-        I[camera_control.cpp]
-        J[dht_sensor.cpp]
-        K[led_control.cpp]
-        L[config_manager.cpp]
-    end
-    
-    A -->|HTTP/SSE| B
-    B --> C --> D
-    D -->|发布指令| G
-    G -->|订阅指令| H
-    H --> I & J & K & L
-    I -->|HTTP上传图片| B
-    H -->|发布状态| G --> C --> E --> A
+    A <-->|HTTP/SSE| B
+    B <--> D
+    D <-->|MQTT| F
+    F <--> G & H & I
+    E -.->|API调用| B
 ```
 
 ---
@@ -201,405 +216,51 @@ graph TB
 
 ```
 IOT/
-├── CameraWebServer/              # ESP32-CAM固件 (模块化设计)
-│   ├── CameraWebServer.ino       # 主程序入口
-│   ├── config.h                  # 全局配置和声明
-│   ├── config_manager.cpp        # Flash配置读写 (Preferences)
-│   ├── mqtt_handler.cpp          # MQTT连接和消息处理
-│   ├── camera_control.cpp        # 摄像头拍照和参数调整
-│   ├── led_control.cpp           # LED和指示灯控制
-│   ├── dht_sensor.cpp           # DHT22温湿度传感器
-│   ├── servo_control.cpp        # SG90舵机控制 (窗户)
-│   ├── relay_control.cpp        # 继电器控制 (风扇)
-│   ├── light_sensor.cpp         # 光敏电阻传感器
-│   ├── status_publisher.cpp      # 状态发布
-│   ├── asr_handler.cpp           # ASR PRO语音模块串口通信
-│   ├── app_httpd.cpp             # MJPEG视频流服务器
-│   └── board_config.h            # 开发板型号配置
+├── CameraWebServer/              # ESP32-CAM固件 (C++)
+│   ├── CameraWebServer.ino       # 主循环
+│   ├── camera_control.cpp        # 摄像头驱动
+│   ├── mqtt_handler.cpp          # MQTT 双向通信
+│   └── ... (模块化硬件驱动)
 │
-├── IOT.hd                        # ASR PRO语音模块代码 (天问Block)
-├── SpringbootIOT/                # Spring Boot后端
-│   ├── src/main/java/com/springboot/
-│   │   ├── controller/           # REST API控制器
-│   │   │   ├── CamController.java         # 摄像头/LED/配置API
-│   │   │   ├── DhtDataController.java     # 温湿度数据API
-│   │   │   ├── SseController.java         # SSE实时推送
-│   │   │   ├── OperationLogController.java # 操作日志
-│   │   │   └── DeviceStatusHistoryController.java
-│   │   ├── service/              # 业务逻辑层
-│   │   ├── pojo/                 # 数据实体类
-│   │   │   ├── Query/            # 请求DTO (带验证)
-│   │   │   └── vo/               # 响应VO
-│   │   └── configuration/        # MQTT/拦截器配置
-│   └── sql/schema.sql            # 数据库建表脚本
+├── digital-twin-dashboard/       # 前端数字孪生 (Vue 3 + Vite)
+│   ├── src/components/three/     # Three.js 3D场景
+│   ├── src/components/panels/    # 监控与控制面板
+│   ├── src/components/controls/  # 手势交互组件
+│   └── src/stores/               # Pinia 状态管理
 │
-├── test-panel/                   # Web测试面板
-│   ├── test-panel.html           # 主页面
-│   ├── test-panel.js             # 逻辑代码 (~1400行)
-│   └── test-panel.css            # 样式
-│
-└── libraries/                    # Arduino依赖库
-    ├── ArduinoJson/              # v6.21.3 - JSON解析
-    ├── PubSubClient/             # v2.8 - MQTT客户端
-    ├── DHT_sensor_library/       # DHT22传感器库
-    └── Adafruit_Unified_Sensor/  # 传感器基础库
+└── SpringbootIOT/                # 后端服务 (Java)
+    ├── controller/               # API 接口
+    ├── service/                  # 业务逻辑
+    └── configuration/            # MQTT与定时任务配置
 ```
 
 ---
 
-## 🔧 技术栈
+## 🔧 技术栈更新
 
-### 硬件
-- **ESP32-CAM AI-Thinker** - 双核240MHz, 4MB PSRAM
-- **OV2640摄像头** - 200万像素
-- **DHT22传感器** - 温湿度采集 (GPIO13)
-- **光敏电阻模块** - 环境光照检测 (DO接GPIO2)
-- **SG90舵机** - 窗户控制 (GPIO14)
-- **5V继电器** - 风扇控制 (GPIO12, 烧录时断开)
-- **闪光灯LED** - GPIO4 (PWM控制)
-- **红色指示灯** - GPIO33
+### 前端 (digital-twin-dashboard)
+- **核心框架**: Vue 3 (Composition API) + Vite
+- **3D 引擎**: Three.js
+- **图表库**: ECharts 5
+- **AI 交互**: MediaPipe Hands (手势识别)
+- **状态管理**: Pinia
+- **通信**: SSE (Server-Sent Events) + Axios
 
-### ESP32固件
-| 组件 | 版本 | 用途 |
-|------|------|------|
-| ESP32 Arduino Core | 3.3.3 | 开发框架 |
-| ArduinoJson | 6.21.3 | JSON解析 |
-| PubSubClient | 2.8 | MQTT客户端 |
-| Preferences | 内置 | Flash配置持久化 |
-| DHT库 | - | 温湿度传感器 |
-
-### Spring Boot后端
-| 组件 | 版本 | 用途 |
-|------|------|------|
-| Spring Boot | 3.5.0 | 后端框架 |
-| Java | 17+ | 运行时 |
-| spring-integration-mqtt | - | MQTT集成 |
-| MyBatis-Plus | 3.5.7 | 数据库ORM |
-| MySQL | - | 数据持久化 |
-
-### 前端
-- **原生HTML/CSS/JavaScript**
-- **Chart.js 4.4.1** - 图表可视化
-- **SSE (Server-Sent Events)** - 实时推送
+### 后端 (SpringbootIOT)
+- **框架**: Spring Boot 3.5.0
+- **通信**: MQTT (Spring Integration), SSE
+- **数据库**: MyBatis-Plus + MySQL
+- **AI**: 阿里云 ModelScope SDK
 
 ---
 
-## 📡 MQTT协议详解
+## 📝 记住点 (Key Takeaways)
 
-### Topic结构
-```
-cam/{clientId}/cmd      # 后端 → ESP32 (下行指令)
-cam/{clientId}/result   # ESP32 → 后端 (执行结果)
-cam/{clientId}/status   # ESP32 → 后端 (设备状态)
-cam/{clientId}/dht      # ESP32 → 后端 (温湿度)
-cam/{clientId}/config   # ESP32 → 后端 (完整配置)
-```
-
-### 指令消息格式
-```json
-{"id": 5741231234, "op": "capture", "val": 0}
-```
-- `id`: 命令ID (10位数字，32位long范围内)
-- `op`: 操作类型
-- `val`: 参数值
-
-**支持的操作类型 (op)：**
-| op | 说明 | val含义 |
-|----|------|---------|
-| `capture` | 拍照上传 | 无 |
-| `led` | 闪光灯开关 | 0=关, 1=开 |
-| `led_brightness` | 闪光灯亮度 | 0-255 |
-| `red_led` | 红色指示灯 | 0=关, 1=开 |
-| `framesize` | 分辨率 | 7/11/14 |
-| `brightness` | 亮度 | -2~2 |
-| `contrast` | 对比度 | -2~2 |
-| `saturation` | 饱和度 | -2~2 |
-| `set_wifi` | WiFi配置 | 需ssid/password字段 |
-| `set_mqtt` | MQTT配置 | 需server/port字段 |
-| `set_upload_url` | 上传URL | 需url字段 |
-| `get_config` | 查询配置 | 无 |
-| `reset_config` | 恢复默认 | 无 |
-| `set_dht_interval` | DHT采集间隔 | 毫秒(1000-60000) |
-| `set_status_interval` | 状态上报间隔 | 毫秒(10000-300000) |
-| `servo` | 舵机角度 | 0-180度 |
-| `fan_on` | 风扇开启 | 无 |
-| `fan_off` | 风扇关闭 | 无 |
-
-### 结果消息格式
-```json
-{"id": 5741231234, "ok": true, "info": "上传成功"}
-```
-
----
-
-## 🚀 快速开始
-
-### 1. 数据库初始化
-```sql
--- 执行 SpringbootIOT/sql/schema.sql
-CREATE TABLE IF NOT EXISTS device_status_history (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    client_id VARCHAR(64) NOT NULL,
-    rssi INT NOT NULL,
-    free_heap INT NOT NULL,
-    uptime BIGINT NOT NULL,
-    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_client_id (client_id),
-    INDEX idx_create_time (create_time)
-);
-```
-
-### 2. ESP32-CAM固件配置
-
-修改 `config.h`:
-```cpp
-#define DEFAULT_WIFI_SSID "你的WiFi名称"
-#define DEFAULT_WIFI_PASS "你的WiFi密码"
-#define DEFAULT_UPLOAD_URL "http://你的后端IP:8080/mqtt/cam/upload"
-```
-
-Arduino IDE配置:
-- 开发板: `ESP32 Wrover Module`
-- 分区方案: `Huge APP (3MB No OTA/1MB SPIFFS)`
-- 波特率: 115200
-
-### 3. 启动后端
-```bash
-cd SpringbootIOT
-mvn spring-boot:run
-```
-
-### 4. 使用测试面板
-1. 打开 `test-panel/test-panel.html`
-2. 配置后端地址和设备ID
-3. 输入ESP32的IP地址启动视频流
-
----
-
-## 📊 API调用示例
-
-### 拍照
-```bash
-curl -X POST http://localhost:8080/mqtt/capture/esp32cam
-```
-
-### LED控制
-```bash
-# 开灯
-curl -X POST http://localhost:8080/mqtt/led/esp32cam \
-  -H "Content-Type: application/json" \
-  -d '{"value": 1}'
-
-# 设置亮度
-curl -X POST http://localhost:8080/mqtt/led-brightness/esp32cam \
-  -H "Content-Type: application/json" \
-  -d '{"brightness": 200}'
-```
-
-### 摄像头参数
-```bash
-# 调整亮度
-curl -X POST http://localhost:8080/mqtt/param/esp32cam \
-  -H "Content-Type: application/json" \
-  -d '{"name": "brightness", "value": 1}'
-
-# 切换分辨率
-curl -X POST http://localhost:8080/mqtt/stream-resolution/esp32cam \
-  -H "Content-Type: application/json" \
-  -d '{"framesize": 11}'  # 720p
-```
-
-### 查询配置
-```bash
-curl -X POST http://localhost:8080/mqtt/cam/esp32cam/get_config
-```
-
----
-
-## 📊 性能指标
-
-| 指标 | 数值 |
-|------|------|
-| 1080p拍照时间 | 2-3秒 |
-| 图片大小 | 150-250KB |
-| 720p视频流帧率 | 15-25 FPS |
-| MQTT延迟 | <100ms |
-| DHT22采样间隔 | 1-60秒 |
-| ESP32空闲内存 | ~150KB |
-
----
-
-## 🔑 代码调用关系
-
-### ESP32端流程
-```
-MQTT消息 → mqttCallback() → handleCommand()
-                              ├── captureAndUpload() → uploadImage()
-                              ├── controlLED() / setLEDBrightness()
-                              ├── controlRedLED()
-                              ├── setCameraParam()
-                              ├── saveWiFiConfig() → ESP.restart()
-                              ├── saveMQTTConfig() → ESP.restart()
-                              ├── saveUploadUrl()
-                              ├── publishConfig()
-                              └── publishResult()
-```
-
-### 后端流程
-```
-HTTP请求 → CamController → CamService
-                            ├── generateCmdId()
-                            ├── MqttGateway.send()
-                            └── → MQTT Broker → ESP32
-```
-
----
-
-## 📝 版本信息
-
-- **版本**: 2.7.0
-- **最后更新**: 2025-12-29
-- **开发者**: IOT Project Team
-
-### 更新日志
-
-**v2.7.0** (2025-12-29)
-- 🔄 全面改用**异步SSE推送**模式，解决API阻塞问题
-- 📸 拍照完成通过SSE实时推送前端，内嵌预览（非弹窗）
-- 🤖 AI问答异步化，后端线程池处理，结果SSE推送
-- 📤 ESP32改用**分块传输**上传图片，避免内存不足
-- 🧹 代码清理：移除废弃的`source`参数和`captureAndWait`接口
-
-**v2.6.0** (2025-12-27)
-- 🤖 新增AI助手视觉问答功能 (Qwen-VL)
-- 📸 支持对话前自动拍照，AI分析图片回答
-- 💬 支持会话记忆，多轮对话
-- 🎯 集成阿里云魔塔ModelScope API
-
-**v2.5.0** (2025-12-26)
-- 🤖 新增智能自动化控制功能
-- 🌡️ 温度自动化：高温开窗+开风扇，低温关窗+关风扇
-- 💧 湿度自动化：高湿开窗，低湿关窗
-- 💡 光照自动化：暗开灯，亮关灯
-- ⚠️ 设备监控：内存低/信号差自动开红灯警示
-- 📝 自动化操作记录日志，显示为"🤖 自动化: xxx"
-- ⏸️ 手动操作后暂停自动化（可配置暂停时间）
-- 🎛️ 前端新增智能自动化配置面板
-
-**v2.4.1** (2025-12-26)
-- 🎤 修复语音控制操作日志不写入数据库问题
-- 📜 语音控制操作现在正确记录到日志并通过SSE推送到前端
-- 🔧 后端新增 `logVoiceCommand()` 方法处理语音控制日志
-
-**v2.4.0** (2025-12-25)
-- 🌀 新增继电器风扇控制 (GPIO12)
-- ☀️ 新增光敏电阻明暗检测 (DO接GPIO2)
-- 🪧 新增SG90舵机窗户控制 (GPIO14)
-- 📱 前端风扇/窗户/光照状态实时同步
-- 📍 ESP32 IP自动回显到前端
-
-**v2.3.0** (2025-12-15)
-- 📄 重新整理README文档
-- 📋 完善功能清单和API说明
-- 🔧 整理代码调用关系
-
-**v2.2.0** (2025-12-11)
-- 🔧 ESP32固件拆分为8个模块化文件
-- 📊 新增设备状态历史数据存储和图表展示
-- 🔄 LED按钮改为开关切换模式
-- 📦 后端Map改为DTO/VO实体类
-
----
-
-## 🤖 AI视觉问答功能
-
-### 功能概述
-
-集成阿里云魔塔ModelScope的Qwen-VL视觉语言模型，支持：
-- **自动拍照问答**：发送消息时自动触发ESP32拍照，AI分析图片回答
-- **图片分析**：对已有图片进行AI描述和问答
-- **会话记忆**：支持多轮对话，AI记住上下文
-
-### 架构流程
-
-```mermaid
-sequenceDiagram
-    participant 前端
-    participant 后端
-    participant ESP32
-    participant AI API
-    
-    前端->>后端: POST /ai/chat (异步)
-    后端-->>前端: 返回taskId
-    后端->>ESP32: MQTT触发拍照
-    ESP32->>后端: HTTP上传图片
-    后端->>AI API: 调用Qwen-VL
-    AI API-->>后端: AI响应
-    后端-->>前端: SSE推送结果
-```
-
-### 相关API
-
-| API | 说明 | 返回 |
-|-----|------|------|
-| `POST /ai/chat/{clientId}` | 发送消息（异步拍照+AI） | taskId |
-| `POST /ai/analyze` | 分析指定图片（异步） | taskId |
-| `GET /ai/history/{sessionId}` | 获取对话历史 | 历史列表 |
-| `DELETE /ai/history/{sessionId}` | 清空对话历史 | - |
-
-### SSE事件
-
-| 事件名 | 数据 | 触发时机 |
-|--------|------|----------|
-| `capture` | `{imageFile, cmdId}` | ESP32上传图片完成 |
-| `ai-response` | `{response, imageFile, taskId}` | AI分析完成 |
-
----
-
-## 📄 相关文档
-
-- [项目架构详解](项目架构详解.md) - 完整的代码解析
-- [使用指南](使用指南.md) - API使用教程
-- [配置管理测试](配置管理测试.md) - 配置功能说明
-- [操作日志功能说明](操作日志功能说明.md) - 日志系统
-
----
-
-## 📌 技术要点总结
-
-### 1. cmdId生成 (32位long限制)
-```java
-// Java端生成10位数字，确保不超出ESP32 32位long范围
-private long generateCmdId() {
-    long timestamp = System.currentTimeMillis();
-    int timePart = (int)(timestamp % 1000000);
-    int randomPart = (int)(Math.random() * 10000);
-    return timePart * 10000L + randomPart;  // 5741231234
-}
-```
-
-### 2. HTTP与MQTT连接隔离
-```cpp
-// MQTT使用全局client
-WiFiClient espClient;
-PubSubClient mqttClient(espClient);
-
-// HTTP上传使用独立client
-void uploadImage() {
-    WiFiClient httpClient;  // 独立客户端，避免冲突
-    HTTPClient http;
-    http.begin(httpClient, upload_url);
-}
-```
-
-### 3. 配置持久化 (Preferences)
-```cpp
-// 保存到ESP32 Flash
-preferences.begin("esp32cam", false);
-preferences.putString("wifi_ssid", ssid);
-preferences.end();
-ESP.restart();  // 重启应用新配置
-```
+1.  **cmdId 生成机制**：Java 端生成 10 位数字 ID 以兼容 ESP32 的 32 位 long 类型。
+2.  **HTTP/MQTT 隔离**：ESP32 中 MQTT 长连接与 HTTP 图片上传使用独立的 WiFiClient，互不干扰。
+3.  **SSE 实时推送**：全链路摒弃轮询，状态变更由设备 -> MQTT -> 后端 -> SSE -> 前端，实现低延迟同步。
+4.  **配置持久化**：ESP32 使用 Preferences 库将 WiFi 和 MQTT 配置存入 NVS Flash，掉电不丢失。
+5.  **模块化设计**：固件端按功能（LED/Servo/Net）拆分 `.cpp`，前端按面板拆分 `.vue`，后端按领域拆分 Service，维护性极强。
 
 ---
 

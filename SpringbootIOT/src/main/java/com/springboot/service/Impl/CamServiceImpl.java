@@ -45,6 +45,12 @@ public class CamServiceImpl implements CamService {
     private final ConcurrentHashMap<String, DeviceConfig> deviceStatusCache = new ConcurrentHashMap<>();
 
     /**
+     * 待处理的拍照请求 - 用于AI问答等待图片上传完成
+     * Key: cmdId (字符串), Value: CompletableFuture<fileName>
+     */
+    private final ConcurrentHashMap<String, java.util.concurrent.CompletableFuture<String>> pendingCaptures = new ConcurrentHashMap<>();
+
+    /**
      * 监听mqtt返回消息的方法
      * 处理来自ESP32的result和status消息
      */
@@ -453,5 +459,43 @@ public class CamServiceImpl implements CamService {
         // 记录手动操作，暂停自动化
         automationConfigService.recordManualOperation(clientId);
         return "cmd queued " + id;
+    }
+    
+    /**
+     * 触发拍照并返回用于等待结果的Future
+     * AI问答场景使用此方法，可以异步等待ESP32上传图片完成
+     */
+    @Override
+    public CaptureResult triggerCaptureWithWait(String clientId) {
+        long id = generateCmdId();
+        String json = JsonUtil.toJson(Map.of("id", id, "op", "capture", "val", 0));
+        
+        // 创建Future用于等待图片上传完成
+        java.util.concurrent.CompletableFuture<String> future = new java.util.concurrent.CompletableFuture<>();
+        String cmdIdStr = String.valueOf(id);
+        pendingCaptures.put(cmdIdStr, future);
+        log.info("注册拍照等待: cmdId={}", cmdIdStr);
+        
+        // 发送MQTT指令
+        mqttGateway.send("cam/" + clientId + "/cmd", json);
+        // 记录操作日志
+        operationLogService.log(clientId, "capture", id, 0);
+        
+        return new CaptureResult(id, future);
+    }
+    
+    /**
+     * 当图片上传完成时调用，通知等待的Future
+     * 由CamController.upload()调用
+     */
+    @Override
+    public void notifyCaptureComplete(String cmdId, String fileName) {
+        java.util.concurrent.CompletableFuture<String> future = pendingCaptures.remove(cmdId);
+        if (future != null) {
+            log.info("通知拍照完成: cmdId={}, fileName={}", cmdId, fileName);
+            future.complete(fileName);
+        } else {
+            log.debug("未找到等待的拍照请求: cmdId={}", cmdId);
+        }
     }
 }

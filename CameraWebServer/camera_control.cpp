@@ -3,7 +3,7 @@
  * @brief 摄像头控制模块
  * 
  * 负责：
- * - 拍照功能（1080p高清）
+ * - 拍照功能
  * - HTTP上传图片到后端
  * - 摄像头参数调整
  */
@@ -17,33 +17,17 @@ void captureAndUpload(long cmdId) {
   Serial.println("开始拍照上传...");
   Serial.printf("收到指令ID: %ld\n", cmdId);
   
-  sensor_t *s = esp_camera_sensor_get();
-  framesize_t old_framesize = s->status.framesize;
-  
-  // 切换到1080p拍照
-  if (old_framesize != FRAMESIZE_FHD) {
-    s->set_framesize(s, FRAMESIZE_FHD);
-    delay(100);
-  }
-  
+  // 直接拍照
   camera_fb_t *fb = esp_camera_fb_get();
   if (!fb) {
     Serial.println("摄像头拍照失败");
     publishResult(cmdId, false, "拍照失败");
-    if (old_framesize != FRAMESIZE_FHD) {
-      s->set_framesize(s, old_framesize);
-    }
     return;
   }
 
   Serial.printf("已拍照片: %d 字节\n", fb->len);
   uploadImage(fb, cmdId);
   esp_camera_fb_return(fb);
-  
-  // 恢复原分辨率
-  if (old_framesize != FRAMESIZE_FHD) {
-    s->set_framesize(s, old_framesize);
-  }
 }
 
 /**

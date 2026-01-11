@@ -106,7 +106,7 @@ public class OperationDesc {
         
         switch (operation) {
             case "capture":
-                return "拍照上传(1080p)";
+                return "拍照上传";
             case "led":
                 return value == 1 ? "LED开启" : "LED关闭";
             case "red_led":

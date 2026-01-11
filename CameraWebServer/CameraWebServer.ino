@@ -13,7 +13,7 @@
  * - app_httpd.cpp      - HTTP视频流服务器
  * 
  * 功能概述：
- * 1. 远程拍照上传（1080p高清）
+ * 1. 远程拍照上传
  * 2. MJPEG实时视频流
  * 3. LED闪光灯/指示灯控制
  * 4. DHT22温湿度监测
@@ -67,17 +67,17 @@ void setup() {
   config.xclk_freq_hz = 20000000;
   config.frame_size = FRAMESIZE_QVGA;
   config.pixel_format = PIXFORMAT_JPEG;
-  config.grab_mode = CAMERA_GRAB_WHEN_EMPTY;
+  config.grab_mode = CAMERA_GRAB_LATEST;  // 【关键】每次获取最新帧，而不是缓存帧
   config.fb_location = CAMERA_FB_IN_PSRAM;
   config.jpeg_quality = 25;
-  config.fb_count = 1;
+  config.fb_count = 2;  // 双缓冲：一个给视频流，一个给拍照
 
   // 如果有PSRAM，提高配置
   if (config.pixel_format == PIXFORMAT_JPEG) {
     if (psramFound()) {
       config.jpeg_quality = 10;
-      config.fb_count = 1;
-      config.grab_mode = CAMERA_GRAB_WHEN_EMPTY;
+      config.fb_count = 2;  // 有PSRAM时使用双缓冲
+      config.grab_mode = CAMERA_GRAB_LATEST;  // 确保获取最新一帧
     } else {
       config.frame_size = FRAMESIZE_SVGA;
       config.fb_location = CAMERA_FB_IN_DRAM;

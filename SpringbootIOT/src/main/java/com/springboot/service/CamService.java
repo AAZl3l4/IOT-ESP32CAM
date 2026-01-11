@@ -130,4 +130,23 @@ public interface CamService {
      * @return 命令序号
      */
     String controlRelay(String clientId, boolean on);
+    
+    /**
+     * 触发拍照并返回用于等待结果的Future
+     * @param clientId ESP 的 clientId
+     * @return CaptureResult包含cmdId和用于等待的Future
+     */
+    CaptureResult triggerCaptureWithWait(String clientId);
+    
+    /**
+     * 当图片上传完成时调用，通知等待的Future
+     * @param cmdId 命令ID
+     * @param fileName 上传的文件名
+     */
+    void notifyCaptureComplete(String cmdId, String fileName);
+    
+    /**
+     * 拍照结果包装类
+     */
+    record CaptureResult(long cmdId, java.util.concurrent.CompletableFuture<String> future) {}
 }

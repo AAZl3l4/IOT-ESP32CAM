@@ -2,11 +2,28 @@
 /**
  * AI助手弹窗
  * 移植自 test-panel.html "AI助手" 部分
+ * 支持 Markdown 渲染
  */
 import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useDeviceStore } from '@/stores/deviceStore'
 import { BASE_URL } from '@/config/api'
 import ModalDialog from '@/components/common/ModalDialog.vue'
+import { marked } from 'marked'
+
+// 配置 marked 选项
+marked.setOptions({
+    breaks: true, // 支持换行
+    gfm: true     // GitHub Flavored Markdown
+})
+
+// 渲染 Markdown 为 HTML
+function renderMarkdown(content) {
+    try {
+        return marked.parse(content || '')
+    } catch (e) {
+        return content
+    }
+}
 
 const props = defineProps({
   visible: Boolean
@@ -142,7 +159,7 @@ onUnmounted(() => {
                 
                 <div v-if="msg.role === 'assistant'" class="bubble assistant">
                     <div class="role-label">🤖 AI助手</div>
-                    {{ msg.content }}
+                    <div class="markdown-content" v-html="renderMarkdown(msg.content)"></div>
                 </div>
                 
                 <div v-if="msg.role === 'image'" class="bubble image">
@@ -214,6 +231,23 @@ onUnmounted(() => {
 
 .bubble.user { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-bottom-right-radius: 2px; }
 .bubble.assistant { background: linear-gradient(135deg, #11998e, #38ef7d); color: white; border-bottom-left-radius: 2px; }
+
+/* Markdown 内容样式 */
+.markdown-content :deep(h1), .markdown-content :deep(h2), .markdown-content :deep(h3) {
+    margin: 8px 0 4px 0;
+    font-weight: bold;
+}
+.markdown-content :deep(h1) { font-size: 1.2em; }
+.markdown-content :deep(h2) { font-size: 1.1em; }
+.markdown-content :deep(h3) { font-size: 1.05em; }
+.markdown-content :deep(p) { margin: 4px 0; }
+.markdown-content :deep(ul), .markdown-content :deep(ol) { margin: 4px 0; padding-left: 20px; }
+.markdown-content :deep(li) { margin: 2px 0; }
+.markdown-content :deep(code) { background: rgba(0,0,0,0.3); padding: 1px 4px; border-radius: 3px; font-family: monospace; }
+.markdown-content :deep(pre) { background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px; overflow-x: auto; margin: 6px 0; }
+.markdown-content :deep(blockquote) { border-left: 3px solid rgba(255,255,255,0.5); padding-left: 10px; margin: 6px 0; opacity: 0.9; }
+.markdown-content :deep(strong) { font-weight: bold; }
+.markdown-content :deep(em) { font-style: italic; }
 .bubble.image { background: none; padding: 0; }
 .bubble.system { background: rgba(255,255,255,0.1); color: #aaa; padding: 6px 12px; font-size: 12px; border-radius: 20px; }
 .bubble.error { background: rgba(244, 67, 54, 0.2); color: #ff6b6b; border: 1px solid #ff6b6b; }

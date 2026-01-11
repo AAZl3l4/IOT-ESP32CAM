@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import jakarta.annotation.PostConstruct;
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -81,28 +80,28 @@ public class AiChatServiceImpl implements AiChatService {
     public String chatWithCaptureAsync(String clientId, String sessionId, String message) {
         String taskId = String.valueOf(taskIdGenerator.incrementAndGet());
         
-        // 触发拍照
-        log.info("触发ESP32拍照: clientId={}, taskId={}", clientId, taskId);
-        camService.triggerCapture(clientId);
+        // 使用新的基于回调的拍照方法
+        CamService.CaptureResult captureResult = camService.triggerCaptureWithWait(clientId);
+        log.info("触发ESP32拍照: clientId={}, taskId={}, cmdId={}", clientId, taskId, captureResult.cmdId());
         
-        // 异步执行：等待图片+调用AI
+        // 异步执行：等待图片上传完成 + 调用AI
         executor.submit(() -> {
             try {
-                // 等待图片上传
-                File imageFile = waitForImageFile(clientId);
-                if (imageFile == null) {
-                    sseService.pushAiResponse(sessionId, taskId, "❌ 等待拍照超时，请确认ESP32在线", "");
-                    return;
-                }
-                log.info("获取到图片: {}, taskId={}", imageFile.getName(), taskId);
+                // 等待ESP32上传图片完成（基于MQTT回调，而非轮询文件系统）
+                String fileName = captureResult.future().get(maxWaitSeconds, TimeUnit.SECONDS);
+                log.info("获取到图片: {}, taskId={}", fileName, taskId);
                 
                 // 读取图片并调用AI
-                byte[] imageBytes = Files.readAllBytes(imageFile.toPath());
+                Path imagePath = Paths.get(photosDir, fileName);
+                byte[] imageBytes = Files.readAllBytes(imagePath);
                 String aiResponse = callAiWithImage(sessionId, message, imageBytes);
                 
                 // 推送结果
-                sseService.pushAiResponse(sessionId, taskId, aiResponse, imageFile.getName());
+                sseService.pushAiResponse(sessionId, taskId, aiResponse, fileName);
                 
+            } catch (java.util.concurrent.TimeoutException e) {
+                log.warn("等待拍照超时: taskId={}", taskId);
+                sseService.pushAiResponse(sessionId, taskId, "❌ 等待拍照超时，请确认ESP32在线", "");
             } catch (Exception e) {
                 log.error("AI调用失败: taskId={}, error={}", taskId, e.getMessage(), e);
                 sseService.pushAiResponse(sessionId, taskId, "❌ AI服务调用失败: " + e.getMessage(), "");
@@ -141,47 +140,6 @@ public class AiChatServiceImpl implements AiChatService {
     }
     
     /**
-     * 等待ESP32上传图片，返回图片文件
-     */
-    private File waitForImageFile(String clientId) {
-        Path photosPath = Paths.get(photosDir);
-        long startTime = System.currentTimeMillis();
-        long latestModifiedBefore = getLatestImageTime(photosPath);
-        
-        while (System.currentTimeMillis() - startTime < maxWaitSeconds * 1000) {
-            try {
-                TimeUnit.MILLISECONDS.sleep(500);
-                File latestImage = getLatestImage(photosPath);
-                if (latestImage != null && latestImage.lastModified() > latestModifiedBefore) {
-                    return latestImage;
-                }
-            } catch (Exception e) {
-                log.warn("等待图片时出错: {}", e.getMessage());
-            }
-        }
-        return null;
-    }
-    
-    private long getLatestImageTime(Path photosPath) {
-        File latestImage = getLatestImage(photosPath);
-        return latestImage != null ? latestImage.lastModified() : 0;
-    }
-    
-    private File getLatestImage(Path photosPath) {
-        File dir = photosPath.toFile();
-        if (!dir.exists() || !dir.isDirectory()) return null;
-        
-        File[] files = dir.listFiles((d, name) -> 
-                name.toLowerCase().endsWith(".jpg") || name.toLowerCase().endsWith(".jpeg"));
-        
-        if (files == null || files.length == 0) return null;
-        
-        return Arrays.stream(files)
-                .max(Comparator.comparingLong(File::lastModified))
-                .orElse(null);
-    }
-    
-    /**
      * 调用AI分析图片
      */
     private String callAiWithImage(String sessionId, String message, byte[] imageBytes) throws Exception {
@@ -205,7 +163,7 @@ public class AiChatServiceImpl implements AiChatService {
         
         // 构建请求
         List<Map<String, Object>> messages = new ArrayList<>();
-        messages.add(Map.of("role", "system", "content", "你是一个智能家居助手，负责分析摄像头拍摄的环境图片并回答用户问题。请用简洁的中文回答。"));
+        messages.add(Map.of("role", "system", "content", "你是一个智能家居助手，负责分析摄像头拍摄的环境图片并回答用户问题。请用简洁精炼的中文回答，并使用 Markdown 格式来组织你的回答（如使用 **加粗**、*斜体*、- 列表、### 标题等），使内容结构清晰、易于阅读。"));
         messages.addAll(history);
         
         Map<String, Object> requestBody = new HashMap<>();

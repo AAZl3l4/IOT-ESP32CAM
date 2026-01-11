@@ -43,7 +43,7 @@ public class CamController {
     private String photosDir;
 
     /**
-     * 触发拍照 (1080p高清)
+     * 触发拍照
      */
     @PostMapping("/capture/{clientId}")
     public Result<String> capture(@PathVariable @NotBlank String clientId) {
@@ -212,6 +212,9 @@ public class CamController {
                     cmdId = parts[1];
                 }
             }
+            
+            // 通知等待的AI任务：图片已上传完成
+            camService.notifyCaptureComplete(cmdId, fileName);
             
             // 通过SSE推送拍照结果
             sseService.pushCaptureResult(clientId, cmdId, fileName);
