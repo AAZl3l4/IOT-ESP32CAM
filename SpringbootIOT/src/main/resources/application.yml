@@ -22,7 +22,7 @@ mqtt:
 
 # ModelScope AI 配置
 modelscope:
-  api-key: api-key
+  api-key: 
   model: Qwen/Qwen2.5-VL-32B-Instruct
   api-url: https://api-inference.modelscope.cn/v1/chat/completions
 
